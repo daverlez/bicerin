@@ -35,6 +35,9 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
     uint8_t y = (opcode >> 3) & 0x07;
     uint8_t z = opcode & 0x07;
 
+    /***********
+     * Block 0 *
+     ***********/
     if (x == 0) {
         if (z == 6) {
             /*
@@ -45,6 +48,28 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
             set_reg8(y, value, bus);
             return;
         }
+    }
+
+    /***********
+     * Block 1 *
+     ***********/
+    if (x == 1) {
+        if (y == 6 && z == 6) {
+            /*
+             * HALT
+             * Pauses the CPU until the next interrupt.
+             */
+            std::cout << "HALT instruction executed (Not yet implemented)\n";
+            return;
+        }
+
+        /*
+         * LD r8, r8
+         * Copies the value from register 'z' to register 'y'.
+         */
+        uint8_t value = get_reg8(z, bus);
+        set_reg8(y, value, bus);
+        return;
     }
 
     switch (opcode) {

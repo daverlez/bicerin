@@ -60,3 +60,25 @@ TEST(CpuIntegrationTest, ExecuteAllLoadImmediate8Bit) {
     EXPECT_EQ(bus.read(0x8000), 0x55);
     EXPECT_EQ(cpu.pc, 0x0010);
 }
+
+TEST(CpuIntegrationTest, ExecuteBlock1RegisterTransfers) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+
+    cpu.a = 0x99;
+    cpu.c = 0x42;
+    cpu.set_hl(0x8000);
+
+    bus.write(0x0000, 0x47); // LD B, A
+    bus.write(0x0001, 0x71); // LD [HL], C
+
+    cpu.step(bus);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.b, cpu.a);
+    EXPECT_EQ(bus.read(0x8000), cpu.c);
+    EXPECT_EQ(cpu.pc, 0x0002);
+}
