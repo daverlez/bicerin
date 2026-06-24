@@ -1,4 +1,5 @@
 add_library(core_lib STATIC
+        bus.cpp
         cpu.cpp
 )
 
