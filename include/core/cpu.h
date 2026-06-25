@@ -40,7 +40,12 @@ public:
     void set_hl(uint16_t val) { h = static_cast<uint8_t>(val >> 8); l = static_cast<uint8_t>(val & 0xFF); }
 
 private:
-    uint8_t fetch(Bus& bus);
+    /// Reads a byte from memory and advances the PC.
+    uint8_t fetch8(Bus& bus);
+    /// Reads a byte from memory (little-endian) and advances the PC by two.
+    uint16_t fetch16(Bus& bus);
+
+    /// Decodes the opcode and performs the related execution.
     void execute(uint8_t opcode, Bus& bus);
 
     /// Maps an index (0-8) to its register to write a value.
@@ -57,6 +62,9 @@ private:
     void push(uint16_t value, Bus& bus);
     /// Stack operation: pops two bytes from the stack.
     uint16_t pop(Bus& bus);
+
+    /// Checks a condition (0-3) basing on flags Z and C.
+    bool check_cond(uint8_t cond) const;
 
     bool get_flag_z() const { return (f & 0x80) != 0; }
     bool get_flag_n() const { return (f & 0x40) != 0; }

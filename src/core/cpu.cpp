@@ -20,14 +20,20 @@ void Cpu::reset() {
 }
 
 void Cpu::step(Bus& bus) {
-    uint8_t opcode = fetch(bus);
+    uint8_t opcode = fetch8(bus);
     execute(opcode, bus);
 }
 
-uint8_t Cpu::fetch(Bus& bus) {
+uint8_t Cpu::fetch8(Bus& bus) {
     uint8_t opcode = bus.read(pc);
     pc++;
     return opcode;
+}
+
+uint16_t Cpu::fetch16(Bus& bus) {
+    uint8_t lo = fetch8(bus);
+    uint8_t hi = fetch8(bus);
+    return (static_cast<uint16_t>(hi) << 8) | lo;
 }
 
 void Cpu::execute(uint8_t opcode, Bus& bus) {
@@ -44,7 +50,7 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
              * LD r8, imm8
              * Loads the next byte in the address specified by 'y'.
              */
-            uint8_t value = fetch(bus);
+            uint8_t value = fetch8(bus);
             set_reg8(y, value, bus);
             return;
         }
@@ -97,7 +103,7 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
     if (x == 3) {
         // Arithmetic/Logical operations with imm8
         if (z == 6) {
-            uint8_t operand = fetch(bus);
+            uint8_t operand = fetch8(bus);
 
             switch (y) {
                 case 0: add_a(operand); break; // ADD A, imm8
@@ -112,24 +118,80 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
             return;
         }
 
+        // RET cond
+        if (z == 0) {
+            if (y < 4) {
+                if (check_cond(y))
+                    pc = pop(bus);
+                return;
+            }
+        }
+
         if (z == 1) {
-            // Stack POP instruction (bit 3 == 0)
             if ((y % 2) == 0) {
+                // Stack POP instruction (bit 3 == 0)
                 uint8_t reg_index = y / 2;
                 uint16_t value = pop(bus);
                 set_r16stk(reg_index, value);
+            } else {
+                // Others (bit 3 == 1)
+                switch (y) {
+                    case 1: pc = pop(bus); break;   // RET
+                    case 3: pc = pop(bus); break;   // TODO: enable interrupts (RETI)
+                    case 5: pc = get_hl(); break;      // JP HL
+                    case 7: sp = get_hl(); break;      // LD SP, HL
+                }
+            }
+            return;
+        }
+
+        // JP cond, imm16
+        if (z == 2) {
+            if (y < 4) {
+                uint16_t addr = fetch16(bus);
+                if (check_cond(y))
+                    pc = addr;
+                return;
+            }
+        }
+
+        if (z == 3) {
+            // JP imm16
+            if (y == 0) {
+                pc = fetch16(bus); // JP imm16
+                return;
+            }
+
+            // TODO: Prefix CB, DI, EI
+        }
+
+        // CALL cond, imm16
+        if (z == 4) {
+            if (y < 4) {
+                uint16_t addr = fetch16(bus);
+                if (check_cond(y)) {
+                    push(pc, bus);
+                    pc = addr;
+                }
                 return;
             }
         }
 
         if (z == 5) {
-            // Stack PUSH instruction (bit 3 == 0)
             if ((y % 2) == 0) {
+                // Stack PUSH instruction (bit 3 == 0)
                 uint8_t reg_index = y / 2;
                 uint16_t value = get_r16stk(reg_index);
                 push(value, bus);
-                return;
+            } else {
+                // CALL imm16 (bit 3 == 1)
+                if (y == 1) {
+                    uint16_t addr = fetch16(bus);
+                    push(pc, bus);
+                    pc = addr;
+                }
             }
+            return;
         }
     }
 
@@ -205,6 +267,16 @@ uint16_t Cpu::pop(Bus& bus) {
     uint8_t hi = bus.read(sp);
     sp++;
     return (static_cast<uint16_t>(hi) << 8) | lo;
+}
+
+bool Cpu::check_cond(uint8_t cond) const {
+    switch (cond) {
+        case 0: return !get_flag_z(); // NZ
+        case 1: return get_flag_z();  // Z
+        case 2: return !get_flag_c(); // NC
+        case 3: return get_flag_c();  // C
+        default: return false;
+    }
 }
 
 void Cpu::add_a(uint8_t value) {

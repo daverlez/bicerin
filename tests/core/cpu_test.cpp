@@ -282,3 +282,37 @@ TEST(CpuStackTest, PushAndPopRegisters) {
     EXPECT_EQ(cpu.sp, 0xFFFE);
     EXPECT_EQ(cpu.get_de(), 0x1234);
 }
+
+TEST(CpuControlFlowTest, CallAndReturn) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0100;
+    cpu.sp = 0xFFFE;
+
+    // CALL 0x0500
+    bus.write(0x0100, 0xCD);    // CALL imm16
+    bus.write(0x0101, 0x00);    // lo
+    bus.write(0x0102, 0x05);    // hi
+
+    bus.write(0x0103, 0x3E);    // LD A, d8
+    bus.write(0x0104, 0x99);
+
+    bus.write(0x0500, 0xC9);    // RET
+
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.pc, 0x0500);
+    EXPECT_EQ(cpu.sp, 0xFFFC);
+    EXPECT_EQ(bus.read(0xFFFD), 0x01);
+    EXPECT_EQ(bus.read(0xFFFC), 0x03);
+
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.pc, 0x0103);
+    EXPECT_EQ(cpu.sp, 0xFFFE);
+
+    cpu.step(bus);
+    EXPECT_EQ(cpu.a, 0x99);
+}
