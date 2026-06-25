@@ -673,3 +673,47 @@ TEST(CpuBlock0Test, IncrementAndDecrement8BitFlags) {
     EXPECT_EQ(cpu.c, 0x00);
     EXPECT_EQ(cpu.f, 0xD0);
 }
+
+TEST(CpuBlock0Test, DecimalAdjustAccumulator) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+
+    cpu.a = 0x1E;
+    cpu.f = 0x20;
+
+    // DAA
+    bus.write(0x0000, 0x27);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x24);
+    EXPECT_EQ(cpu.f, 0x00);
+}
+
+TEST(CpuBlock0Test, AccumulatorAndFlagModifiers) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+
+    // CPL
+    cpu.a = 0xF0;
+    bus.write(0x0000, 0x2F);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x0F);
+    EXPECT_EQ(cpu.f, 0x60);
+
+    // SCF
+    bus.write(0x0001, 0x37);
+    cpu.step(bus);
+    EXPECT_EQ(cpu.f, 0x10);
+
+    // CCF
+    bus.write(0x0002, 0x3F);
+    cpu.step(bus);
+    EXPECT_EQ(cpu.f, 0x00);
+}

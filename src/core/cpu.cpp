@@ -100,13 +100,6 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
             }
         }
 
-        if (z == 6) {
-            // LD r8, imm8
-            uint8_t value = fetch8(bus);
-            set_reg8(y, value, bus);
-            return;
-        }
-
         if (z == 2) {
             uint8_t reg_index = y / 2;
             uint16_t addr;
@@ -169,7 +162,95 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
             return;
         }
 
-        // TODO: z=7 (various)
+        if (z == 6) {
+            // LD r8, imm8
+            uint8_t value = fetch8(bus);
+            set_reg8(y, value, bus);
+            return;
+        }
+
+        if (z == 7) {
+            uint8_t carry_out;
+            uint8_t old_c = get_flag_c() ? 1 : 0;
+
+            switch (y) {
+                case 0:
+                    // RLCA
+                    carry_out = (a >> 7) & 1;
+                    a = (a << 1) | carry_out;
+                    set_flag_z(false);
+                    set_flag_n(false);
+                    set_flag_h(false);
+                    set_flag_c(carry_out != 0);
+                    break;
+                case 1:
+                    // RRCA
+                    carry_out = a & 1;
+                    a = (a >> 1) | (carry_out << 7);
+                    set_flag_z(false);
+                    set_flag_n(false);
+                    set_flag_h(false);
+                    set_flag_c(carry_out != 0);
+                    break;
+                case 2:
+                    // RLA
+                    carry_out = (a >> 7) & 1;
+                    a = (a << 1) | old_c;
+                    set_flag_z(false);
+                    set_flag_n(false);
+                    set_flag_h(false);
+                    set_flag_c(carry_out != 0);
+                    break;
+                case 3:
+                    // RRA
+                    carry_out = a & 1;
+                    a = (a >> 1) | (old_c << 7);
+                    set_flag_z(false);
+                    set_flag_n(false);
+                    set_flag_h(false);
+                    set_flag_c(carry_out != 0);
+                    break;
+                case 4: {
+                    // DAA (Decimal Adjust Accumulator)
+                    uint8_t adjust = 0;
+                    bool carry = false;
+
+                    if (get_flag_h() || (!get_flag_n() && (a & 0x0F) > 0x09))
+                        adjust |= 0x06;
+
+                    if (get_flag_c() || (!get_flag_n() && a > 0x99)) {
+                        adjust |= 0x60;
+                        carry = true;
+                    }
+
+                    a += get_flag_n() ? -adjust : adjust;
+
+                    set_flag_z(a == 0);
+                    set_flag_h(false);
+                    set_flag_c(carry || get_flag_c());
+                    break;
+                }
+                case 5:
+                    // CPL (Complement A)
+                    a = ~a;
+                    set_flag_n(true);
+                    set_flag_h(true);
+                    break;
+                case 6:
+                    // SCF (Set Carry Flag)
+                    set_flag_n(false);
+                    set_flag_h(false);
+                    set_flag_c(true);
+                    break;
+                case 7:
+                    // CCF (Complement Carry Flag)
+                    set_flag_n(false);
+                    set_flag_h(false);
+                    set_flag_c(!get_flag_c());
+                    break;
+            }
+            return;
+        }
     }
 
     /***********
