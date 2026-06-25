@@ -588,3 +588,88 @@ TEST(CpuBlock0Test, Add16BitToHL) {
     EXPECT_EQ(cpu.get_hl(), 0x1028);
     EXPECT_EQ(cpu.f, 0x20);
 }
+
+TEST(CpuBlock0Test, IndirectLoadsWithHLAutoIncrement) {
+    Cpu cpu;
+    Bus bus;
+
+    // LD [HL+], A
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.a = 0x42;
+    cpu.set_hl(0x8000);
+
+    bus.write(0x0000, 0x22);
+    cpu.step(bus);
+
+    EXPECT_EQ(bus.read(0x8000), 0x42);
+    EXPECT_EQ(cpu.get_hl(), 0x8001);
+
+    // LD A, [HL-]
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.set_hl(0x8001);
+    bus.write(0x8001, 0x99);
+
+    bus.write(0x0000, 0x3A);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x99);
+    EXPECT_EQ(cpu.get_hl(), 0x8000);
+}
+
+TEST(CpuBlock0Test, IncrementAndDecrement16Bit) {
+    Cpu cpu;
+    Bus bus;
+
+    // INC BC
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.set_bc(0x0FFF);
+    cpu.f = 0x00;
+
+    bus.write(0x0000, 0x03);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.get_bc(), 0x1000);
+    EXPECT_EQ(cpu.f, 0x00);
+
+    // DEC SP
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.sp = 0x1000;
+
+    bus.write(0x0000, 0x3B);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.sp, 0x0FFF);
+}
+
+TEST(CpuBlock0Test, IncrementAndDecrement8BitFlags) {
+    Cpu cpu;
+    Bus bus;
+
+    // INC B
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.b = 0x0F;
+    cpu.f = 0x10;
+
+    bus.write(0x0000, 0x04);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.b, 0x10);
+    EXPECT_EQ(cpu.f, 0x30);
+
+    // DEC C
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.c = 0x01;
+    cpu.f = 0x10;
+
+    bus.write(0x0000, 0x0D);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.c, 0x00);
+    EXPECT_EQ(cpu.f, 0xD0);
+}

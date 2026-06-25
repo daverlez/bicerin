@@ -107,7 +107,69 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
             return;
         }
 
-        // TODO: z=2 (LD [r16mem]), z=4 (INC r8), z=5 (DEC r8), z=7 (various)
+        if (z == 2) {
+            uint8_t reg_index = y / 2;
+            uint16_t addr;
+
+            if (reg_index == 0) {
+                addr = get_bc();
+            } else if (reg_index == 1) {
+                addr = get_de();
+            } else if (reg_index == 2) {
+                addr = get_hl();
+                set_hl(addr + 1); // HL+
+            } else {
+                addr = get_hl();
+                set_hl(addr - 1); // HL-
+            }
+
+            if ((y % 2) == 0) {
+                bus.write(addr, a); // LD [r16mem], A
+            } else {
+                a = bus.read(addr); // LD A, [r16mem]
+            }
+            return;
+        }
+
+        if (z == 3) {
+            uint8_t reg_index = y / 2;
+            uint16_t val = get_r16(reg_index);
+
+            if ((y % 2) == 0)
+                set_r16(reg_index, val + 1); // INC r16
+            else
+                set_r16(reg_index, val - 1); // DEC r16
+
+            return;
+        }
+
+        if (z == 4) {
+            // INC r8
+            uint8_t val = get_reg8(y, bus);
+            uint8_t result = val + 1;
+            set_reg8(y, result, bus);
+
+            set_flag_z(result == 0);
+            set_flag_n(false);
+            set_flag_h((val & 0x0F) == 0x0F);
+
+            return;
+        }
+
+        if (z == 5) {
+            // DEC r8
+            uint8_t val = get_reg8(y, bus);
+            uint8_t result = val - 1;
+            set_reg8(y, result, bus);
+
+            set_flag_z(result == 0);
+            set_flag_n(true);
+            set_flag_h((val & 0x0F) == 0x00);
+
+            return;
+        }
+
+        // TODO: z=7 (various)
     }
 
     /***********
