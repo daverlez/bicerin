@@ -57,6 +57,11 @@ private:
     /// Maps an index (0-8) to its register to read a value.
     uint8_t get_reg8(uint8_t index, Bus& bus) const;
 
+    /// Maps an index (0-3) to the corresponding reg16 (see pandocs) to write a value.
+    void set_r16(uint8_t index, uint16_t value);
+    /// Maps an index (0-3) to the corresponding reg16 (see pandocs) to read a value.
+    uint16_t get_r16(uint8_t index) const;
+
     /// Maps an index (0-3) to the corresponding reg16stk (see pandocs) to write a value.
     void set_r16stk(uint8_t index, uint16_t value);
     /// Maps an index (0-3) to the corresponding reg16stk (see pandocs) to read a value.

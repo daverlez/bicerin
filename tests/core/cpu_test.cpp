@@ -477,3 +477,114 @@ TEST(CpuStackMathTest, StackPointerOffset) {
     EXPECT_EQ(cpu.sp, 0x1000);
     EXPECT_EQ(cpu.f, 0x00);
 }
+
+TEST(CpuControlFlowTest, JumpRelative) {
+    Cpu cpu;
+    Bus bus;
+
+    // JR imm8
+    cpu.reset();
+    cpu.pc = 0x0100;
+
+    bus.write(0x0100, 0x18);
+    bus.write(0x0101, 0x05);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.pc, 0x0107);
+
+    // JR -3
+    cpu.reset();
+    cpu.pc = 0x0100;
+
+    bus.write(0x0100, 0x18);
+    bus.write(0x0101, 0xFD);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.pc, 0x00FF);
+}
+
+TEST(CpuControlFlowTest, JumpRelativeConditional) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.f = 0x00;
+
+    // JR NZ (with zero flag = 0)
+    bus.write(0x0000, 0x20);
+    bus.write(0x0001, 0x05);
+
+    cpu.step(bus);
+    EXPECT_EQ(cpu.pc, 0x0007);
+
+    // JR NZ (with zero flag = 1)
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.f = 0x80;
+
+    bus.write(0x0000, 0x20);
+    bus.write(0x0001, 0x05);
+
+    cpu.step(bus);
+    EXPECT_EQ(cpu.pc, 0x0002);
+}
+
+TEST(CpuBlock0Test, LoadStackPointerToMemory) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+
+    cpu.sp = 0xABCD;
+
+    // LD [imm16]
+    bus.write(0x0000, 0x08);
+    bus.write(0x0001, 0x50);
+    bus.write(0x0002, 0xC0);
+
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.pc, 0x0003);
+    EXPECT_EQ(bus.read(0xC050), 0xCD);
+    EXPECT_EQ(bus.read(0xC051), 0xAB);
+}
+
+TEST(CpuBlock0Test, LoadRegister16Immediate) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+
+    // LD DE, imm16
+    bus.write(0x0000, 0x11);
+    bus.write(0x0001, 0x34); // E
+    bus.write(0x0002, 0x12); // D
+
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.get_de(), 0x1234);
+    EXPECT_EQ(cpu.d, 0x12);
+    EXPECT_EQ(cpu.e, 0x34);
+    EXPECT_EQ(cpu.pc, 0x0003);
+}
+
+TEST(CpuBlock0Test, Add16BitToHL) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+
+    cpu.set_hl(0x0A23);
+    cpu.set_bc(0x0605);
+
+    bus.write(0x0000, 0x09);
+
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.get_hl(), 0x1028);
+    EXPECT_EQ(cpu.f, 0x20);
+}

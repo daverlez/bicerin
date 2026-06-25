@@ -45,12 +45,69 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
      * Block 0 *
      ***********/
     if (x == 0) {
+        if (z == 0) {
+            if (y == 0) {
+                // NOP
+                return;
+            } else if (y == 1) {
+                // LD [imm16], SP
+                uint16_t addr = fetch16(bus);
+                bus.write(addr, static_cast<uint8_t>(sp & 0xFF));
+                bus.write(addr + 1, static_cast<uint8_t>((sp >> 8) & 0xFF));
+                return;
+            } else if (y == 2) {
+                // STOP
+                fetch8(bus);
+                std::cout << "STOP instruction executed (Not yet fully implemented)\n";
+                return;
+            } else if (y == 3) {
+                // JR imm8
+                int8_t signed_offset = static_cast<int8_t>(fetch8(bus));
+                pc += signed_offset;
+                return;
+            } else if (y >= 4) {
+                // JR cond, imm8
+                uint8_t raw_offset = fetch8(bus);
+                int8_t signed_offset = static_cast<int8_t>(raw_offset);
+
+                if (check_cond(y - 4)) {
+                    pc += signed_offset;
+                }
+                return;
+            }
+        }
+
+        if (z == 1) {
+            if ((y % 2) == 0) {
+                // LD r16, imm16
+                uint8_t reg_index = y / 2;
+                uint16_t value = fetch16(bus);
+                set_r16(reg_index, value);
+                return;
+            } else {
+                // ADD HL, r16
+                uint8_t reg_index = y / 2;
+                uint16_t target = get_r16(reg_index);
+                uint16_t current_hl = get_hl();
+                uint32_t result = static_cast<uint32_t>(current_hl) + target;
+
+                set_flag_n(false);
+                set_flag_h((((current_hl & 0x0FFF) + (target & 0x0FFF)) & 0x1000) != 0);
+                set_flag_c(result > 0xFFFF);
+
+                set_hl(static_cast<uint16_t>(result));
+                return;
+            }
+        }
+
         if (z == 6) {
             // LD r8, imm8
             uint8_t value = fetch8(bus);
             set_reg8(y, value, bus);
             return;
         }
+
+        // TODO: z=2 (LD [r16mem]), z=4 (INC r8), z=5 (DEC r8), z=7 (various)
     }
 
     /***********
@@ -114,14 +171,17 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
                 // RET cond
                 if (check_cond(y))
                     pc = pop(bus);
+                return;
             } else if (y == 4) {
                 // LDH [imm8], A
                 uint8_t offset = fetch8(bus);
                 bus.write(0xFF00 + offset, a);
+                return;
             } else if (y == 6) {
                 // LDH A, [imm8]
                 uint8_t offset = fetch8(bus);
                 a = bus.read(0xFF00 + offset);
+                return;
             } else if (y == 5 || y == 7) {
                 uint8_t raw_offset = fetch8(bus);
                 int8_t signed_offset = static_cast<int8_t>(raw_offset);
@@ -142,7 +202,6 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
                 }
                 return;
             }
-            return;
         }
 
         if (z == 1) {
@@ -151,6 +210,7 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
                 uint8_t reg_index = y / 2;
                 uint16_t value = pop(bus);
                 set_r16stk(reg_index, value);
+                return;
             } else {
                 // Others (bit 3 == 1)
                 switch (y) {
@@ -159,8 +219,8 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
                     case 5: pc = get_hl(); break;      // JP HL
                     case 7: sp = get_hl(); break;      // LD SP, HL
                 }
+                return;
             }
-            return;
         }
 
         if (z == 2) {
@@ -169,40 +229,47 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
                 uint16_t addr = fetch16(bus);
                 if (check_cond(y))
                     pc = addr;
+                return;
             } else if (y == 4) {
                 // LDH [c], A
                 bus.write(0xFF00 + c, a);
+                return;
             } else if (y == 5) {
                 // LD [imm16], A
                 uint16_t addr = fetch16(bus);
                 bus.write(addr, a);
+                return;
             } else if (y == 6) {
                 // LDH A, [c]
                 a = bus.read(0xFF00 + c);
+                return;
             } else if (y == 7) {
                 // LD A, [imm16]
                 uint16_t addr = fetch16(bus);
                 a = bus.read(addr);
+                return;
             }
-            return;
         }
 
         if (z == 3) {
             if (y == 0) {
                 // JP imm16
                 pc = fetch16(bus);
+                return;
             } else if (y == 1) {
                 // CB
                 uint8_t cb_opcode = fetch8(bus);
                 execute_cb(cb_opcode, bus);
+                return;
             } else if (y == 6) {
                 // DI
                 ime = false;
+                return;
             } else if (y == 7) {
                 // EI
                 ime = true;
+                return;
             }
-            return;
         }
 
         // CALL cond, imm16
@@ -223,15 +290,16 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
                 uint8_t reg_index = y / 2;
                 uint16_t value = get_r16stk(reg_index);
                 push(value, bus);
+                return;
             } else {
-                // CALL imm16 (bit 3 == 1)
                 if (y == 1) {
+                    // CALL imm16 (bit 3 == 1)
                     uint16_t addr = fetch16(bus);
                     push(pc, bus);
                     pc = addr;
+                    return;
                 }
             }
-            return;
         }
 
         if (z == 7) {
@@ -242,17 +310,10 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
         }
     }
 
-    switch (opcode) {
-        case 0x00:
-            break;
-
-        default:
-            std::cerr << "Error:: Opcode not implemented:: 0x"
-                      << std::hex << (int)opcode
-                      << " at PC address:: 0x"
-                      << (pc - 1) << "\n";
-            break;
-    }
+    std::cerr << "Error:: Opcode not implemented:: 0x"
+              << std::hex << (int)opcode
+              << " at PC address:: 0x"
+              << (pc - 1) << "\n";
 }
 
 void Cpu::execute_cb(uint8_t cb_opcode, Bus& bus) {
@@ -370,6 +431,15 @@ uint8_t Cpu::get_reg8(uint8_t index, Bus& bus) const {
     }
 }
 
+void Cpu::set_r16stk(uint8_t index, uint16_t value) {
+    switch (index) {
+        case 0: set_bc(value); break;
+        case 1: set_de(value); break;
+        case 2: set_hl(value); break;
+        case 3: set_af(value); break;
+    }
+}
+
 uint16_t Cpu::get_r16stk(uint8_t index) const {
     switch (index) {
         case 0: return get_bc();
@@ -380,12 +450,22 @@ uint16_t Cpu::get_r16stk(uint8_t index) const {
     }
 }
 
-void Cpu::set_r16stk(uint8_t index, uint16_t value) {
+void Cpu::set_r16(uint8_t index, uint16_t value) {
     switch (index) {
         case 0: set_bc(value); break;
         case 1: set_de(value); break;
         case 2: set_hl(value); break;
-        case 3: set_af(value); break;
+        case 3: sp = value;    break;
+    }
+}
+
+uint16_t Cpu::get_r16(uint8_t index) const {
+    switch (index) {
+        case 0: return get_bc();
+        case 1: return get_de();
+        case 2: return get_hl();
+        case 3: return sp;
+        default: return 0;
     }
 }
 
