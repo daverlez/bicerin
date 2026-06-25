@@ -46,10 +46,7 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
      ***********/
     if (x == 0) {
         if (z == 6) {
-            /*
-             * LD r8, imm8
-             * Loads the next byte in the address specified by 'y'.
-             */
+            // LD r8, imm8
             uint8_t value = fetch8(bus);
             set_reg8(y, value, bus);
             return;
@@ -61,18 +58,12 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
      ***********/
     if (x == 1) {
         if (y == 6 && z == 6) {
-            /*
-             * HALT
-             * Pauses the CPU until the next interrupt.
-             */
+            // HALT
             std::cout << "HALT instruction executed (Not yet implemented)\n";
             return;
         }
 
-        /*
-         * LD r8, r8
-         * Copies the value from register 'z' to register 'y'.
-         */
+        // LD r8, r8
         uint8_t value = get_reg8(z, bus);
         set_reg8(y, value, bus);
         return;
@@ -118,13 +109,21 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
             return;
         }
 
-        // RET cond
         if (z == 0) {
             if (y < 4) {
+                // RET cond
                 if (check_cond(y))
                     pc = pop(bus);
-                return;
+            } else if (y == 4) {
+                // LDH [imm8], A
+                uint8_t offset = fetch8(bus);
+                bus.write(0xFF00 + offset, a);
+            } else if (y == 6) {
+                // LDH A, [imm8]
+                uint8_t offset = fetch8(bus);
+                a = bus.read(0xFF00 + offset);
             }
+            return;
         }
 
         if (z == 1) {
@@ -145,14 +144,28 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
             return;
         }
 
-        // JP cond, imm16
         if (z == 2) {
             if (y < 4) {
+                // JP cond, imm16
                 uint16_t addr = fetch16(bus);
                 if (check_cond(y))
                     pc = addr;
-                return;
+            } else if (y == 4) {
+                // LDH [c], A
+                bus.write(0xFF00 + c, a);
+            } else if (y == 5) {
+                // LD [imm16], A
+                uint16_t addr = fetch16(bus);
+                bus.write(addr, a);
+            } else if (y == 6) {
+                // LDH A, [c]
+                a = bus.read(0xFF00 + c);
+            } else if (y == 7) {
+                // LD A, [imm16]
+                uint16_t addr = fetch16(bus);
+                a = bus.read(addr);
             }
+            return;
         }
 
         if (z == 3) {
@@ -191,6 +204,13 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
                     pc = addr;
                 }
             }
+            return;
+        }
+
+        if (z == 7) {
+            // RST tgt3
+            push(pc, bus);
+            pc = y * 8;
             return;
         }
     }

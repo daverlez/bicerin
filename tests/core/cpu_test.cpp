@@ -316,3 +316,33 @@ TEST(CpuControlFlowTest, CallAndReturn) {
     cpu.step(bus);
     EXPECT_EQ(cpu.a, 0x99);
 }
+
+TEST(CpuMemoryTest, LoadHighRamInstructions) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+
+    // LDH [imm8], A
+    cpu.a = 0x42;
+    bus.write(0x0000, 0xE0);
+    bus.write(0x0001, 0x40);
+
+    cpu.step(bus);
+
+    EXPECT_EQ(bus.read(0xFF40), 0x42);
+    EXPECT_EQ(cpu.pc, 0x0002);
+
+    // LDH A, [C]
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.c = 0x44;
+    bus.write(0xFF44, 0x99);
+    bus.write(0x0000, 0xF2);
+
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x99);
+    EXPECT_EQ(cpu.pc, 0x0001);
+}
