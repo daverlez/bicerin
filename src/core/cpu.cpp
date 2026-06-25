@@ -91,6 +91,28 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
         return;
     }
 
+    /***********
+     * Block 3 *
+     ***********/
+    if (x == 3) {
+        // Arithmetic/Logical operations with imm8
+        if (z == 6) {
+            uint8_t operand = fetch(bus);
+
+            switch (y) {
+                case 0: add_a(operand); break; // ADD A, imm8
+                case 1: adc_a(operand); break; // ADC A, imm8
+                case 2: sub_a(operand); break; // SUB A, imm8
+                case 3: sbc_a(operand); break; // SBC A, imm8
+                case 4: and_a(operand); break; // AND A, imm8
+                case 5: xor_a(operand); break; // XOR A, imm8
+                case 6: or_a(operand);  break; // OR A, imm8
+                case 7: cp_a(operand);  break; // CP A, imm8
+            }
+            return;
+        }
+    }
+
     switch (opcode) {
         case 0x00:
             break;
