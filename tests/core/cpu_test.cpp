@@ -256,3 +256,29 @@ TEST(CpuLogicTest, LogicalOr) {
     EXPECT_EQ(cpu.a, 0xFF);
     EXPECT_EQ(cpu.f, 0x00);
 }
+
+TEST(CpuStackTest, PushAndPopRegisters) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.sp = 0xFFFE;
+
+    cpu.set_bc(0x1234);
+    cpu.set_de(0x0000);
+
+    bus.write(0x0000, 0xC5);    // PUSH BC
+    bus.write(0x0001, 0xD1);    // POP DE
+
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.sp, 0xFFFC);
+    EXPECT_EQ(bus.read(0xFFFD), 0x12);
+    EXPECT_EQ(bus.read(0xFFFC), 0x34);
+
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.sp, 0xFFFE);
+    EXPECT_EQ(cpu.get_de(), 0x1234);
+}

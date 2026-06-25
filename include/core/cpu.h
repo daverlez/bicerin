@@ -48,6 +48,16 @@ private:
     /// Maps an index (0-8) to its register to read a value.
     uint8_t get_reg8(uint8_t index, Bus& bus) const;
 
+    /// Maps an index (0-3) to the corresponding reg16stk (see pandocs) to write a value.
+    void set_r16stk(uint8_t index, uint16_t value);
+    /// Maps an index (0-3) to the corresponding reg16stk (see pandocs) to read a value.
+    uint16_t get_r16stk(uint8_t index) const;
+
+    /// Stack operation: pushes two bytes on the stack.
+    void push(uint16_t value, Bus& bus);
+    /// Stack operation: pops two bytes from the stack.
+    uint16_t pop(Bus& bus);
+
     bool get_flag_z() const { return (f & 0x80) != 0; }
     bool get_flag_n() const { return (f & 0x40) != 0; }
     bool get_flag_h() const { return (f & 0x20) != 0; }

@@ -111,6 +111,26 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
             }
             return;
         }
+
+        if (z == 1) {
+            // Stack POP instruction (bit 3 == 0)
+            if ((y % 2) == 0) {
+                uint8_t reg_index = y / 2;
+                uint16_t value = pop(bus);
+                set_r16stk(reg_index, value);
+                return;
+            }
+        }
+
+        if (z == 5) {
+            // Stack PUSH instruction (bit 3 == 0)
+            if ((y % 2) == 0) {
+                uint8_t reg_index = y / 2;
+                uint16_t value = get_r16stk(reg_index);
+                push(value, bus);
+                return;
+            }
+        }
     }
 
     switch (opcode) {
@@ -151,6 +171,40 @@ uint8_t Cpu::get_reg8(uint8_t index, Bus& bus) const {
         case 7: return a;
         default: return 0;
     }
+}
+
+uint16_t Cpu::get_r16stk(uint8_t index) const {
+    switch (index) {
+        case 0: return get_bc();
+        case 1: return get_de();
+        case 2: return get_hl();
+        case 3: return get_af();
+        default: return 0;
+    }
+}
+
+void Cpu::set_r16stk(uint8_t index, uint16_t value) {
+    switch (index) {
+        case 0: set_bc(value); break;
+        case 1: set_de(value); break;
+        case 2: set_hl(value); break;
+        case 3: set_af(value); break;
+    }
+}
+
+void Cpu::push(uint16_t value, Bus& bus) {
+    sp--;
+    bus.write(sp, static_cast<uint8_t>((value >> 8) & 0xFF));
+    sp--;
+    bus.write(sp, static_cast<uint8_t>(value & 0xFF));
+}
+
+uint16_t Cpu::pop(Bus& bus) {
+    uint8_t lo = bus.read(sp);
+    sp++;
+    uint8_t hi = bus.read(sp);
+    sp++;
+    return (static_cast<uint16_t>(hi) << 8) | lo;
 }
 
 void Cpu::add_a(uint8_t value) {
