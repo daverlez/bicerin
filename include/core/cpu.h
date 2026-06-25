@@ -47,4 +47,23 @@ private:
     void set_reg8(uint8_t index, uint8_t value, Bus& bus);
     /// Maps an index (0-8) to its register to read a value.
     uint8_t get_reg8(uint8_t index, Bus& bus) const;
+
+    bool get_flag_z() const { return (f & 0x80) != 0; }
+    bool get_flag_n() const { return (f & 0x40) != 0; }
+    bool get_flag_h() const { return (f & 0x20) != 0; }
+    bool get_flag_c() const { return (f & 0x10) != 0; }
+
+    void set_flag_z(bool value) { if (value) f |= 0x80; else f &= ~0x80; }
+    void set_flag_n(bool value) { if (value) f |= 0x40; else f &= ~0x40; }
+    void set_flag_h(bool value) { if (value) f |= 0x20; else f &= ~0x20; }
+    void set_flag_c(bool value) { if (value) f |= 0x10; else f &= ~0x10; }
+
+    void add_a(uint8_t value);
+    void adc_a(uint8_t value);
+    void sub_a(uint8_t value);
+    void sbc_a(uint8_t value);
+    void and_a(uint8_t value);
+    void xor_a(uint8_t value);
+    void or_a(uint8_t value);
+    void cp_a(uint8_t value);
 };

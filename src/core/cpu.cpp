@@ -72,6 +72,25 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
         return;
     }
 
+    /***********
+     * Block 2 *
+     ***********/
+    if (x == 2) {
+        uint8_t operand = get_reg8(z, bus);
+
+        switch (y) {
+            case 0: add_a(operand); break; // ADD
+            case 1: adc_a(operand); break; // ADC
+            case 2: sub_a(operand); break; // SUB
+            case 3: sbc_a(operand); break; // SBC
+            case 4: and_a(operand); break; // AND
+            case 5: xor_a(operand); break; // XOR
+            case 6: or_a(operand);  break; // OR
+            case 7: cp_a(operand);  break; // CP
+        }
+        return;
+    }
+
     switch (opcode) {
         case 0x00:
             break;
@@ -110,4 +129,85 @@ uint8_t Cpu::get_reg8(uint8_t index, Bus& bus) const {
         case 7: return a;
         default: return 0;
     }
+}
+
+void Cpu::add_a(uint8_t value) {
+    uint16_t result = static_cast<uint16_t>(a) + value;
+
+    set_flag_z((result & 0xFF) == 0);
+    set_flag_n(false);
+    set_flag_h((((a & 0x0F) + (value & 0x0F)) & 0x10) != 0);
+    set_flag_c(result > 0xFF);
+
+    a = static_cast<uint8_t>(result);
+}
+
+void Cpu::adc_a(uint8_t value) {
+    uint8_t carry = get_flag_c() ? 1 : 0;
+    uint16_t result = static_cast<uint16_t>(a) + value + carry;
+
+    set_flag_z((result & 0xFF) == 0);
+    set_flag_n(false);
+    set_flag_h((((a & 0x0F) + (value & 0x0F) + carry) & 0x10) != 0);
+    set_flag_c(result > 0xFF);
+
+    a = static_cast<uint8_t>(result);
+}
+
+void Cpu::sub_a(uint8_t value) {
+    int result = static_cast<int>(a) - value;
+
+    set_flag_z((result & 0xFF) == 0);
+    set_flag_n(true);
+    set_flag_h((a & 0x0F) < (value & 0x0F));
+    set_flag_c(a < value);
+
+    a = static_cast<uint8_t>(result);
+}
+
+void Cpu::sbc_a(uint8_t value) {
+    uint8_t carry = get_flag_c() ? 1 : 0;
+    int result = static_cast<int>(a) - value - carry;
+
+    set_flag_z((result & 0xFF) == 0);
+    set_flag_n(true);
+    set_flag_h((a & 0x0F) < ((value & 0x0F) + carry));
+
+    uint16_t res16 = static_cast<uint16_t>(a) - static_cast<uint16_t>(value) - static_cast<uint16_t>(carry);
+    set_flag_c(res16 > 0xFF);
+
+    a = static_cast<uint8_t>(result);
+}
+
+void Cpu::and_a(uint8_t value) {
+    a &= value;
+    set_flag_z(a == 0);
+    set_flag_n(false);
+    set_flag_h(true);
+    set_flag_c(false);
+}
+
+void Cpu::xor_a(uint8_t value) {
+    a ^= value;
+    set_flag_z(a == 0);
+    set_flag_n(false);
+    set_flag_h(false);
+    set_flag_c(false);
+}
+
+void Cpu::or_a(uint8_t value) {
+    a |= value;
+    set_flag_z(a == 0);
+    set_flag_n(false);
+    set_flag_h(false);
+    set_flag_c(false);
+}
+
+void Cpu::cp_a(uint8_t value) {
+    int result = static_cast<int>(a) - value;
+
+    set_flag_z((result & 0xFF) == 0);
+    set_flag_n(true);
+    set_flag_h((a & 0x0F) < (value & 0x0F));
+    set_flag_c(a < value);
 }

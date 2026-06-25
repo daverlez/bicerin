@@ -82,3 +82,177 @@ TEST(CpuIntegrationTest, ExecuteBlock1RegisterTransfers) {
     EXPECT_EQ(bus.read(0x8000), cpu.c);
     EXPECT_EQ(cpu.pc, 0x0002);
 }
+
+TEST(CpuArithmeticTest, AddToAccumulator) {
+    Cpu cpu;
+    Bus bus;
+
+    // Simple addition
+    cpu.reset();
+    cpu.a = 0x05;
+    cpu.b = 0x03;
+
+    cpu.pc = 0x0000;
+    bus.write(0x0000, 0x80);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x08);
+    EXPECT_EQ(cpu.f, 0x00);
+
+    // Addition with half-carry
+    cpu.reset();
+    cpu.a = 0x0F;
+    cpu.c = 0x01;
+
+    cpu.pc = 0x0000;
+    bus.write(0x0000, 0x81);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x10);
+    EXPECT_EQ(cpu.f, 0x20);
+
+    // Addition with zero flag and carry flag
+    cpu.reset();
+    cpu.a = 0xFF;
+    cpu.d = 0x01;
+
+    cpu.pc = 0x0000;
+    bus.write(0x0000, 0x82);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x00);
+    EXPECT_EQ(cpu.f, 0xB0);
+}
+
+TEST(CpuArithmeticTest, SubAndCompare) {
+    Cpu cpu;
+    Bus bus;
+
+    // Subtraction (with half-carry)
+    cpu.reset();
+    cpu.a = 0x10;
+    cpu.b = 0x05;
+
+    cpu.pc = 0x0000;
+    bus.write(0x0000, 0x90);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x0B);
+    EXPECT_EQ(cpu.f, 0x60);
+
+    // Compare
+    cpu.reset();
+    cpu.a = 0x42;
+    cpu.c = 0x42;
+
+    cpu.pc = 0x0000;
+    bus.write(0x0000, 0xB9);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x42);
+    EXPECT_EQ(cpu.f, 0xC0);
+
+    // Compare (with half-carry)
+    cpu.reset();
+    cpu.a = 0x05;
+    cpu.d = 0x10;
+
+    cpu.pc = 0x0000;
+    bus.write(0x0000, 0xBA);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x05);
+    EXPECT_EQ(cpu.f, 0x50);
+}
+
+TEST(CpuArithmeticTest, AddWithCarry) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+
+    cpu.a = 0x10;
+    cpu.b = 0x20;
+    cpu.f = 0x10;
+
+    // ADC A, B
+    bus.write(0x0000, 0x88);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x31);
+    EXPECT_EQ(cpu.f, 0x00);
+}
+
+TEST(CpuArithmeticTest, SubtractWithCarry) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+
+    cpu.a = 0x10;
+    cpu.c = 0x05;
+    cpu.f = 0x10;
+
+    // SBC A, C
+    bus.write(0x0000, 0x99);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x0A);
+    EXPECT_EQ(cpu.f, 0x60);
+}
+
+TEST(CpuLogicTest, LogicalAnd) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+
+    cpu.a = 0xFF;
+    cpu.d = 0x0F;
+
+    // AND A, D
+    bus.write(0x0000, 0xA2);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x0F);
+    EXPECT_EQ(cpu.f, 0x20);
+}
+
+TEST(CpuLogicTest, LogicalXorAndZeroFlag) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+
+    cpu.a = 0xAA;
+    cpu.e = 0xAA;
+
+    // XOR A, E
+    bus.write(0x0000, 0xAB);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x00);
+    EXPECT_EQ(cpu.f, 0x80);
+}
+
+TEST(CpuLogicTest, LogicalOr) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+
+    cpu.a = 0x55;
+    cpu.h = 0xAA;
+
+    // OR A, H
+    bus.write(0x0000, 0xB4);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0xFF);
+    EXPECT_EQ(cpu.f, 0x00);
+}
