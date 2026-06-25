@@ -346,3 +346,70 @@ TEST(CpuMemoryTest, LoadHighRamInstructions) {
     EXPECT_EQ(cpu.a, 0x99);
     EXPECT_EQ(cpu.pc, 0x0001);
 }
+
+TEST(CpuBitwiseTest, TestBitInstruction) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.h = 0x80;
+
+    // Bit 7 of H must be 1.
+    bus.write(0x0000, 0xCB);    // CB
+    bus.write(0x0001, 0x7C);    // BIT 7, H
+
+    cpu.step(bus);
+
+    EXPECT_FALSE(cpu.f & 0x80);
+    EXPECT_TRUE(cpu.f & 0x20);
+    EXPECT_EQ(cpu.pc, 0x0002);
+
+    // Bit 0 of H must be 0.
+    cpu.pc = 0x0000;
+
+    bus.write(0x0000, 0xCB);    // CB
+    bus.write(0x0001, 0x44);    // BIT 0, H
+
+    cpu.step(bus);
+
+    EXPECT_TRUE(cpu.f & 0x80);
+    EXPECT_TRUE(cpu.f & 0x20);
+}
+
+TEST(CpuBitwiseTest, SetAndResetInstructions) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.b = 0x00;
+
+    bus.write(0x0000, 0xCB);    // CB
+    bus.write(0x0001, 0xF8);    // SET 7, B
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.b, 0x80);
+    EXPECT_EQ(cpu.pc, 0x0002);
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.a = 0xFF;
+
+    bus.write(0x0000, 0xCB);    // CB
+    bus.write(0x0001, 0x9F);    // RES 3, A
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0xF7);
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.set_hl(0xC000);
+    bus.write(0xC000, 0x00);
+
+    bus.write(0x0000, 0xCB);    // CB
+    bus.write(0x0001, 0xC6);    // SET 0, [HL]
+    cpu.step(bus);
+
+    EXPECT_EQ(bus.read(0xC000), 0x01);
+}

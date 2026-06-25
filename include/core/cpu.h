@@ -47,6 +47,8 @@ private:
 
     /// Decodes the opcode and performs the related execution.
     void execute(uint8_t opcode, Bus& bus);
+    /// Decodes the opcode with prefix and performs the related execution.
+    void execute_cb(uint8_t cb_opcode, Bus& bus);
 
     /// Maps an index (0-8) to its register to write a value.
     void set_reg8(uint8_t index, uint8_t value, Bus& bus);

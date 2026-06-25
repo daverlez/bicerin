@@ -169,13 +169,17 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
         }
 
         if (z == 3) {
-            // JP imm16
             if (y == 0) {
-                pc = fetch16(bus); // JP imm16
-                return;
+                // JP imm16
+                pc = fetch16(bus);
+            } else if (y == 1) {
+                // CB
+                uint8_t cb_opcode = fetch8(bus);
+                execute_cb(cb_opcode, bus);
             }
+            return;
 
-            // TODO: Prefix CB, DI, EI
+            // TODO: DI, EI
         }
 
         // CALL cond, imm16
@@ -225,6 +229,38 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
                       << " at PC address:: 0x"
                       << (pc - 1) << "\n";
             break;
+    }
+}
+
+void Cpu::execute_cb(uint8_t cb_opcode, Bus& bus) {
+    uint8_t cb_x = (cb_opcode >> 6) & 0x03;
+    uint8_t cb_y = (cb_opcode >> 3) & 0x07;
+    uint8_t cb_z = cb_opcode & 0x07;
+
+    uint8_t target_reg = get_reg8(cb_z, bus);
+
+    if (cb_x == 1) {
+        // BIT b3, r8
+        bool bit_is_zero = (target_reg & (1 << cb_y)) == 0;
+
+        set_flag_z(bit_is_zero);
+        set_flag_n(false);
+        set_flag_h(true);
+        return;
+    }
+
+    if (cb_x == 2) {
+        // RES b3, r8
+        target_reg &= ~(1 << cb_y);
+        set_reg8(cb_z, target_reg, bus);
+        return;
+    }
+
+    if (cb_x == 3) {
+        // SET b3, r8
+        target_reg |= (1 << cb_y);
+        set_reg8(cb_z, target_reg, bus);
+        return;
     }
 }
 
