@@ -413,3 +413,37 @@ TEST(CpuBitwiseTest, SetAndResetInstructions) {
 
     EXPECT_EQ(bus.read(0xC000), 0x01);
 }
+
+TEST(CpuBitwiseTest, RotationsAndShifts) {
+    Cpu cpu;
+    Bus bus;
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.a = 0xA5; // 1010 0101
+
+    bus.write(0x0000, 0xCB);    // CB
+    bus.write(0x0001, 0x37);    // SWAP A
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.a, 0x5A); // 0101 1010
+    EXPECT_EQ(cpu.f, 0x00);
+
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.c = 0x80; // 1000 0000
+    cpu.f = 0x10; // C = 1
+
+    bus.write(0x0000, 0xCB);    // CB
+    bus.write(0x0001, 0x11);    // RL C
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.c, 0x01); // 0000 0001
+    EXPECT_EQ(cpu.f, 0x10);
+
+    bus.write(0x0002, 0xCB);
+    bus.write(0x0003, 0x11);
+    cpu.step(bus);
+    EXPECT_EQ(cpu.c, 0x03); // 0000 0011
+    EXPECT_EQ(cpu.f, 0x00);
+}

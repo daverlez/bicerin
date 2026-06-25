@@ -239,6 +239,62 @@ void Cpu::execute_cb(uint8_t cb_opcode, Bus& bus) {
 
     uint8_t target_reg = get_reg8(cb_z, bus);
 
+    if (cb_x == 0) {
+        uint8_t carry_out = 0;
+        uint8_t result = target_reg;
+
+        switch (cb_y) {
+            case 0:
+                // RLC (Rotate Left Circular)
+                carry_out = (target_reg >> 7) & 1;
+                result = (target_reg << 1) | carry_out;
+                break;
+            case 1:
+                // RRC (Rotate Right Circular)
+                carry_out = target_reg & 1;
+                result = (target_reg >> 1) | (carry_out << 7);
+                break;
+            case 2:
+                // RL (Rotate Left through Carry)
+                carry_out = (target_reg >> 7) & 1;
+                result = (target_reg << 1) | (get_flag_c() ? 1 : 0);
+                break;
+            case 3:
+                // RR (Rotate Right through Carry)
+                carry_out = target_reg & 1;
+                result = (target_reg >> 1) | (get_flag_c() ? 0x80 : 0);
+                break;
+            case 4:
+                // SLA (Shift Left Arithmetic)
+                carry_out = (target_reg >> 7) & 1;
+                result = target_reg << 1;
+                break;
+            case 5:
+                // SRA (Shift Right Arithmetic)
+                carry_out = target_reg & 1;
+                result = (target_reg >> 1) | (target_reg & 0x80);
+                break;
+            case 6:
+                // SWAP
+                carry_out = 0;
+                result = ((target_reg & 0x0F) << 4) | ((target_reg & 0xF0) >> 4);
+                break;
+            case 7:
+                // SRL (Shift Right Logical)
+                carry_out = target_reg & 1;
+                result = target_reg >> 1;
+                break;
+        }
+
+        set_reg8(cb_z, result, bus);
+
+        set_flag_z(result == 0);
+        set_flag_n(false);
+        set_flag_h(false);
+        set_flag_c(carry_out != 0);
+        return;
+    }
+
     if (cb_x == 1) {
         // BIT b3, r8
         bool bit_is_zero = (target_reg & (1 << cb_y)) == 0;
