@@ -447,3 +447,33 @@ TEST(CpuBitwiseTest, RotationsAndShifts) {
     EXPECT_EQ(cpu.c, 0x03); // 0000 0011
     EXPECT_EQ(cpu.f, 0x00);
 }
+
+TEST(CpuStackMathTest, StackPointerOffset) {
+    Cpu cpu;
+    Bus bus;
+
+    // ADD SP, 10
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.sp = 0x1000;
+
+    bus.write(0x0000, 0xE8);
+    bus.write(0x0001, 0x0A);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.sp, 0x100A);
+    EXPECT_EQ(cpu.f, 0x00);
+
+    // LD HL, SP - 5
+    cpu.reset();
+    cpu.pc = 0x0000;
+    cpu.sp = 0x1000;
+
+    bus.write(0x0000, 0xF8);
+    bus.write(0x0001, 0xFB);
+    cpu.step(bus);
+
+    EXPECT_EQ(cpu.get_hl(), 0x0FFB);
+    EXPECT_EQ(cpu.sp, 0x1000);
+    EXPECT_EQ(cpu.f, 0x00);
+}

@@ -122,6 +122,25 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
                 // LDH A, [imm8]
                 uint8_t offset = fetch8(bus);
                 a = bus.read(0xFF00 + offset);
+            } else if (y == 5 || y == 7) {
+                uint8_t raw_offset = fetch8(bus);
+                int8_t signed_offset = static_cast<int8_t>(raw_offset);
+
+                uint16_t result = sp + signed_offset;
+
+                set_flag_z(false);
+                set_flag_n(false);
+                set_flag_h(((sp & 0x0F) + (raw_offset & 0x0F)) > 0x0F);
+                set_flag_c(((sp & 0xFF) + (raw_offset & 0xFF)) > 0xFF);
+
+                if (y == 5) {
+                    // ADD SP, imm8
+                    sp = result;
+                } else {
+                    // LD HL, SP + imm8
+                    set_hl(result);
+                }
+                return;
             }
             return;
         }
@@ -176,10 +195,14 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
                 // CB
                 uint8_t cb_opcode = fetch8(bus);
                 execute_cb(cb_opcode, bus);
+            } else if (y == 6) {
+                // DI
+                ime = false;
+            } else if (y == 7) {
+                // EI
+                ime = true;
             }
             return;
-
-            // TODO: DI, EI
         }
 
         // CALL cond, imm16

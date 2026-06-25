@@ -29,6 +29,8 @@ public:
     uint16_t sp{0};
     uint16_t pc{0};
 
+    bool ime{false};
+
     uint16_t get_af() const { return (static_cast<uint16_t>(a) << 8) | f; }
     uint16_t get_bc() const { return (static_cast<uint16_t>(b) << 8) | c; }
     uint16_t get_de() const { return (static_cast<uint16_t>(d) << 8) | e; }
