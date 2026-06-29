@@ -19,9 +19,15 @@ void Cpu::reset() {
     pc = 0x0100;
 }
 
-void Cpu::step(Bus& bus) {
+uint8_t Cpu::step(Bus& bus) {
+    uint8_t interrupt_cycles = handle_interrupts(bus);
+    if (interrupt_cycles > 0) return interrupt_cycles;
+
+    if (halted) return 1;
+
     uint8_t opcode = fetch8(bus);
     execute(opcode, bus);
+    return 0;   // TODO
 }
 
 uint8_t Cpu::fetch8(Bus& bus) {
@@ -259,8 +265,9 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
     if (x == 1) {
         if (y == 6 && z == 6) {
             // HALT
-            std::cout << "HALT instruction executed (Not yet implemented)\n";
+            halted = true;
             return;
+            // TODO: return 1;
         }
 
         // LD r8, r8
@@ -357,10 +364,10 @@ void Cpu::execute(uint8_t opcode, Bus& bus) {
             } else {
                 // Others (bit 3 == 1)
                 switch (y) {
-                    case 1: pc = pop(bus); break;   // RET
-                    case 3: pc = pop(bus); break;   // TODO: enable interrupts (RETI)
-                    case 5: pc = get_hl(); break;      // JP HL
-                    case 7: sp = get_hl(); break;      // LD SP, HL
+                    case 1: pc = pop(bus); break;               // RET
+                    case 3: pc = pop(bus); ime = true; break;   // RETI
+                    case 5: pc = get_hl(); break;                  // JP HL
+                    case 7: sp = get_hl(); break;                  // LD SP, HL
                 }
                 return;
             }
@@ -635,6 +642,39 @@ bool Cpu::check_cond(uint8_t cond) const {
         case 3: return get_flag_c();  // C
         default: return false;
     }
+}
+
+uint8_t Cpu::handle_interrupts(Bus& bus) {
+    uint8_t ie = bus.read(0xFFFF);
+    uint8_t if_reg = bus.read(0xFF0F);
+
+    uint8_t pending = ie & if_reg & 0x1F;
+
+    if (pending > 0) {
+        halted = false;
+
+        if (ime) {
+            ime = false;
+
+            for (uint8_t i = 0; i < 5; i++) {
+                if (pending & (1 << i)) {
+                    bus.write(0xFF0F, if_reg & ~(1 << i));
+                    push(pc, bus);
+
+                    // Bit 0: 0x40 (VBlank)
+                    // Bit 1: 0x48 (LCD STAT)
+                    // Bit 2: 0x50 (Timer)
+                    // Bit 3: 0x58 (Serial)
+                    // Bit 4: 0x60 (Joypad)
+                    pc = 0x0040 + (i * 8);
+
+                    return 5;
+                }
+            }
+        }
+    }
+
+    return 0;
 }
 
 void Cpu::add_a(uint8_t value) {
