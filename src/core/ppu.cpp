@@ -84,8 +84,7 @@ void Ppu::tick(uint8_t m_cycles) {
         else if (current_mode == Mode::PixelTransfer && cycles_accumulator >= 43) {
             cycles_accumulator -= 43;
 
-            // TODO: Scanline rendering
-
+            render_scanline();
             change_mode(Mode::HBlank);
         }
         else if (current_mode == Mode::HBlank && cycles_accumulator >= 51) {
@@ -135,5 +134,52 @@ void Ppu::check_lyc() {
         }
     } else {
         stat &= ~(1 << 2);
+    }
+}
+
+void Ppu::render_scanline() {
+    if (lcdc & 0x01)
+        render_background();
+
+    // TODO: render_window() and render_sprites()
+}
+
+void Ppu::render_background() {
+    uint16_t tile_map_base = (lcdc & 0x08) ? 0x1C00 : 0x1800;
+
+    bool is_unsigned_mode = (lcdc & 0x10) != 0;
+    uint16_t tile_data_base = is_unsigned_mode ? 0x0000 : 0x1000;
+
+    uint8_t bg_y = ly + scy;
+
+    uint16_t tile_row = (bg_y / 8) * 32;
+    uint8_t pixel_row_in_tile = bg_y % 8;
+
+    for (int x = 0; x < 160; x++) {
+        uint8_t bg_x = x + scx;
+
+        uint16_t tile_col = bg_x / 8;
+        uint8_t pixel_col_in_tile = bg_x % 8;
+
+        uint16_t tile_address = tile_map_base + tile_row + tile_col;
+        uint8_t tile_id = vram[tile_address];
+
+        uint16_t tile_location = tile_data_base;
+        if (is_unsigned_mode) {
+            tile_location += tile_id * 16;
+        } else {
+            int8_t signed_id = static_cast<int8_t>(tile_id);
+            tile_location += (signed_id + 128) * 16;
+        }
+
+        uint16_t line_address = tile_location + (pixel_row_in_tile * 2);
+        uint8_t byte_low = vram[line_address];
+        uint8_t byte_high = vram[line_address + 1];
+
+        uint8_t color_bit = 7 - pixel_col_in_tile;
+        uint8_t color_id = ((byte_high >> color_bit) & 0x01) << 1 | ((byte_low >> color_bit) & 0x01);
+
+        uint8_t palette_color = (bgp >> (color_id * 2)) & 0x03;
+        frame_buffer[ly * 160 + x] = colors[palette_color];
     }
 }

@@ -49,6 +49,12 @@ private:
     bool vblank_interrupt_requested{false};
     bool stat_interrupt_requested{false};
 
+    std::array<uint32_t, 160 * 144> frame_buffer{};
+    const std::array<uint32_t, 4> colors = { 0xFFE0F8D0, 0xFF88C070, 0xFF346856, 0xFF081820 };
+
     void change_mode(Mode new_mode);
     void check_lyc();
+
+    void render_scanline();
+    void render_background();
 };
