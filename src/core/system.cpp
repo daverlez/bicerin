@@ -32,6 +32,14 @@ void System::run() {
             joypad.clear_interrupt_request();
         }
 
-        // TODO: PPU interrupts
+        if (ppu.is_vblank_interrupt_requested()) {
+            bus.request_interrupt(0);
+            ppu.clear_vblank_interrupt();
+        }
+
+        if (ppu.is_stat_interrupt_requested()) {
+            bus.request_interrupt(1);
+            ppu.clear_stat_interrupt();
+        }
     }
 }

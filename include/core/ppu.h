@@ -4,6 +4,13 @@
 
 class Ppu {
 public:
+    enum class Mode {
+        HBlank = 0,
+        VBlank = 1,
+        OamSearch = 2,
+        PixelTransfer = 3
+    };
+
     Ppu();
     ~Ppu() = default;
 
@@ -14,6 +21,12 @@ public:
 
     /// Advances PPU's state machine using CPU's M-cycles.
     void tick(uint8_t cycles);
+
+    bool is_vblank_interrupt_requested() const { return vblank_interrupt_requested; }
+    void clear_vblank_interrupt() { vblank_interrupt_requested = false; }
+
+    bool is_stat_interrupt_requested() const { return stat_interrupt_requested; }
+    void clear_stat_interrupt() { stat_interrupt_requested = false; }
 
 private:
     std::array<uint8_t, 8192> vram{}; // RAM, 8 KB  (0x8000 - 0x9FFF)
@@ -31,5 +44,11 @@ private:
     uint8_t wy{0x00};   // Window Y
     uint8_t wx{0x00};   // Window X
 
-    [[maybe_unused]] uint16_t cycles_accumulator{0};
+    uint16_t cycles_accumulator{0};
+
+    bool vblank_interrupt_requested{false};
+    bool stat_interrupt_requested{false};
+
+    void change_mode(Mode new_mode);
+    void check_lyc();
 };
