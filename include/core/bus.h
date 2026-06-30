@@ -2,11 +2,12 @@
 #include <cstdint>
 #include <array>
 
+#include "cartridge.h"
 #include "timer.h"
 
 class Bus {
 public:
-    explicit Bus(Timer& t);
+    explicit Bus(Timer& t, Cartridge* c);
     ~Bus() = default;
 
     /// Reads a byte at a given 16-bit register.
@@ -17,12 +18,10 @@ public:
 
     /// Writes a byte at a given 16-bit register.
     void write(uint16_t address, uint8_t value);
-    
-    /// Loads a ROM file in memory.
-    bool load_rom(const std::string& filepath);
 
 private:
     Timer& timer;
+    Cartridge* cartridge;
 
     std::array<uint8_t, 0x10000> memory{};  // 64 KB
     uint8_t ie_register{0}; // 0xFFFF - Interrupt Enable

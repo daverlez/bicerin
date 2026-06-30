@@ -7,12 +7,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    System system;
-
-    // Carichiamo la ROM
-    if (!system.load_rom(argv[1])) {
-        return -1;
-    }
+    System system(argv[1]);
 
     std::cout << "Starting emulation...\n";
     std::cout << "---------------------\n";

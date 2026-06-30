@@ -1,5 +1,6 @@
 add_library(core_lib STATIC
         bus.cpp
+        cartridge.cpp
         cpu.cpp
         system.cpp
         timer.cpp

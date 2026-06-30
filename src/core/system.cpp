@@ -1,9 +1,14 @@
 #include "core/system.h"
 
-System::System() : timer(), bus(timer), cpu() {}
-
-bool System::load_rom(const std::string& filepath) {
-    return bus.load_rom(filepath);
+System::System(const std::string& rom_path)
+    : cartridge(Cartridge::load(rom_path)),
+      timer(),
+      bus(timer, cartridge.get()),
+      cpu()
+{
+    if (!cartridge) {
+        throw std::runtime_error("Cannot load rom.");
+    }
 }
 
 void System::run() {

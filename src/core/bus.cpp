@@ -3,13 +3,21 @@
 
 #include "core/bus.h"
 
-Bus::Bus(Timer& t) : timer(t) {
+Bus::Bus(Timer& t, Cartridge* c) : timer(t), cartridge(c) {
     memory.fill(0x00);
     ie_register = 0x00;
     if_register = 0xE1;
 }
 
 uint8_t Bus::read(uint16_t address) const {
+    // External ROM (0x0000-0x7FFF) or RAM (0xA000-0xBFFF)
+    if (address < 0x8000 || (address >= 0xA000 && address <= 0xBFFF)) {
+        if (cartridge)
+            return cartridge->read(address);
+
+        return 0xFF;
+    }
+
     // Timer (0xFF04 - 0xFF07)
     if (address >= 0xFF04 && address <= 0xFF07) {
         return timer.read_reg(address);
@@ -29,6 +37,14 @@ uint8_t Bus::read(uint16_t address) const {
 }
 
 void Bus::write(uint16_t address, uint8_t value) {
+    // External ROM (0x0000-0x7FFF) or RAM (0xA000-0xBFFF)
+    if (address < 0x8000 || (address >= 0xA000 && address <= 0xBFFF)) {
+        if (cartridge)
+            cartridge->write(address, value);
+
+        return;
+    }
+
     // Timer (0xFF04 - 0xFF07)
     if (address >= 0xFF04 && address <= 0xFF07) {
         timer.write_reg(address, value);
@@ -58,27 +74,4 @@ void Bus::write(uint16_t address, uint8_t value) {
 
 void Bus::request_interrupt(uint8_t bit) {
     if_register |= (1 << bit);
-}
-
-bool Bus::load_rom(const std::string& filepath) {
-    std::ifstream file(filepath, std::ios::binary | std::ios::ate);
-
-    if (!file.is_open()) {
-        std::cerr << "Error:: cannot open rom " << filepath << "\n";
-        return false;
-    }
-
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    if (size > 0x8000)
-        size = 0x8000;
-
-    if (file.read(reinterpret_cast<char*>(memory.data()), size)) {
-        std::cout << "ROM loaded successfully (" << size << " bytes)\n";
-        return true;
-    }
-
-    std::cerr << "Error reading ROM.\n";
-    return false;
 }

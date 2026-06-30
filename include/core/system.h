@@ -7,7 +7,7 @@
 
 class System {
 public:
-    System();
+    System(const std::string& rom_path);
     ~System() = default;
 
     /// Loads a ROM file.
@@ -17,6 +17,7 @@ public:
     void run();
 
 private:
+    std::unique_ptr<Cartridge> cartridge;
     Timer timer;
     Bus bus;
     Cpu cpu;
