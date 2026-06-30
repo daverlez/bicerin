@@ -85,7 +85,7 @@ uint8_t Cpu::execute(uint8_t opcode, Bus& bus) {
             } else if (y == 2) {
                 // STOP
                 fetch8(bus);
-                std::cout << "STOP instruction executed (Not yet fully implemented)\n";
+                // TODO: complete implementation
                 return 0;
             } else if (y == 3) {
                 // JR imm8
