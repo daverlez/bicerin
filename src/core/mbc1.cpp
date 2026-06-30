@@ -1,14 +1,39 @@
+#include <fstream>
+#include <iostream>
+
 #include "core/mbc1.h"
 
-Mbc1::Mbc1(std::vector<uint8_t> rom_data, uint8_t ram_size_code) : rom(std::move(rom_data)) {
+Mbc1::Mbc1(std::vector<uint8_t> rom_data, uint8_t ram_size_code, const std::string& path, bool battery)
+    : rom(std::move(rom_data)), save_path(path), has_battery(battery)
+{
     size_t ram_bytes = 0;
     switch (ram_size_code) {
-        case 0x02: ram_bytes = 8 * 1024;  break;    // 8 KB (1 bank)
-        case 0x03: ram_bytes = 32 * 1024; break;    // 32 KB (4 banks)
-        case 0x04: ram_bytes = 128 * 1024; break;   // 128 KB (16 banks)
-        case 0x05: ram_bytes = 64 * 1024; break;    // 64 KB (8 banks)
+        case 0x02: ram_bytes = 8 * 1024;  break;
+        case 0x03: ram_bytes = 32 * 1024; break;
+        case 0x04: ram_bytes = 128 * 1024; break;
+        case 0x05: ram_bytes = 64 * 1024; break;
     }
     ram.resize(ram_bytes, 0x00);
+
+    if (has_battery && !ram.empty()) {
+        std::ifstream file(save_path, std::ios::binary);
+        if (file.is_open()) {
+            file.read(reinterpret_cast<char*>(ram.data()), ram.size());
+            std::cout << "Save loaded from: " << save_path << "\n";
+        } else
+            std::cout << "No save found: new game.\n";
+    }
+}
+
+Mbc1::~Mbc1() {
+    if (has_battery && !ram.empty()) {
+        std::ofstream file(save_path, std::ios::binary);
+        if (file.is_open()) {
+            file.write(reinterpret_cast<char*>(ram.data()), ram.size());
+            std::cout << "Save completed successfully: " << save_path << "\n";
+        } else
+            std::cerr << "Error:: cannot create save file.\n";
+    }
 }
 
 uint8_t Mbc1::read(uint16_t address) const {
