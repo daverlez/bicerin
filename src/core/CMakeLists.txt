@@ -4,6 +4,7 @@ add_library(core_lib STATIC
         cpu.cpp
         joypad.cpp
         mbc1.cpp
+        ppu.cpp
         system.cpp
         timer.cpp
 )

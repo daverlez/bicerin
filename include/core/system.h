@@ -25,4 +25,5 @@ private:
     Bus bus;
     Cpu cpu;
     Joypad joypad;
+    Ppu ppu;
 };

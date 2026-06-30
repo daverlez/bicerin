@@ -15,6 +15,13 @@ uint8_t Bus::read(uint16_t address) const {
         if (cartridge) return cartridge->read(address);
     }
 
+    // PPU
+    if ((address >= 0x8000 && address <= 0x9FFF) ||
+        (address >= 0xFE00 && address <= 0xFE9F) ||
+        (address >= 0xFF40 && address <= 0xFF4B)) {
+        if (ppu) return ppu->read(address);
+    }
+
     // Joypad
     if (address == 0xFF00) {
         if (joypad) return joypad->read();
@@ -43,6 +50,16 @@ void Bus::write(uint16_t address, uint8_t value) {
     if (address < 0x8000 || (address >= 0xA000 && address <= 0xBFFF)) {
         if (cartridge) {
             cartridge->write(address, value);
+            return;
+        }
+    }
+
+    // PPU
+    if ((address >= 0x8000 && address <= 0x9FFF) ||
+        (address >= 0xFE00 && address <= 0xFE9F) ||
+        (address >= 0xFF40 && address <= 0xFF4B)) {
+        if (ppu) {
+            ppu->write(address, value);
             return;
         }
     }

@@ -13,12 +13,14 @@ System::System(const std::string& rom_path)
     bus.connect_timer(&timer);
     bus.connect_cartridge(cartridge.get());
     bus.connect_joypad(&joypad);
+    bus.connect_ppu(&ppu);
 }
 
 void System::run() {
     while (true) {
         uint8_t cycles = cpu.step(bus);
         timer.tick(cycles);
+        ppu.tick(cycles);
 
         if (timer.is_interrupt_requested()) {
             bus.request_interrupt(2);
@@ -29,5 +31,7 @@ void System::run() {
             bus.request_interrupt(4);
             joypad.clear_interrupt_request();
         }
+
+        // TODO: PPU interrupts
     }
 }
