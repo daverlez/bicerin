@@ -11,8 +11,8 @@ public:
     /// Resets the CPU to the initial state.
     void reset();
 
-    /// Performs a fetch-decode-execute step.
-    void step(Bus& bus);
+    /// Performs a fetch-decode-execute step. Returns the amount of M-cycles spent.
+    uint8_t step(Bus& bus);
 
     uint8_t a{0};
     uint8_t f{0};
@@ -30,6 +30,7 @@ public:
     uint16_t pc{0};
 
     bool ime{false};
+    bool halted{false};
 
     uint16_t get_af() const { return (static_cast<uint16_t>(a) << 8) | f; }
     uint16_t get_bc() const { return (static_cast<uint16_t>(b) << 8) | c; }
@@ -48,9 +49,9 @@ private:
     uint16_t fetch16(Bus& bus);
 
     /// Decodes the opcode and performs the related execution.
-    void execute(uint8_t opcode, Bus& bus);
+    uint8_t execute(uint8_t opcode, Bus& bus);
     /// Decodes the opcode with prefix and performs the related execution.
-    void execute_cb(uint8_t cb_opcode, Bus& bus);
+    uint8_t execute_cb(uint8_t cb_opcode, Bus& bus);
 
     /// Maps an index (0-8) to its register to write a value.
     void set_reg8(uint8_t index, uint8_t value, Bus& bus);
@@ -74,6 +75,9 @@ private:
 
     /// Checks a condition (0-3) basing on flags Z and C.
     bool check_cond(uint8_t cond) const;
+
+    /// Checks IE and IF registers to serve interrupts. Returns the amount of M-cycles if an interrupt is served, 0 otherwise.
+    uint8_t handle_interrupts(Bus& bus);
 
     bool get_flag_z() const { return (f & 0x80) != 0; }
     bool get_flag_n() const { return (f & 0x40) != 0; }
