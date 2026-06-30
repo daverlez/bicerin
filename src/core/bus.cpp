@@ -3,7 +3,7 @@
 
 #include "core/bus.h"
 
-Bus::Bus(Timer& t, Cartridge* c) : timer(t), cartridge(c) {
+Bus::Bus() {
     memory.fill(0x00);
     ie_register = 0x00;
     if_register = 0xE1;
@@ -12,15 +12,17 @@ Bus::Bus(Timer& t, Cartridge* c) : timer(t), cartridge(c) {
 uint8_t Bus::read(uint16_t address) const {
     // External ROM (0x0000-0x7FFF) or RAM (0xA000-0xBFFF)
     if (address < 0x8000 || (address >= 0xA000 && address <= 0xBFFF)) {
-        if (cartridge)
-            return cartridge->read(address);
+        if (cartridge) return cartridge->read(address);
+    }
 
-        return 0xFF;
+    // Joypad
+    if (address == 0xFF00) {
+        if (joypad) return joypad->read();
     }
 
     // Timer (0xFF04 - 0xFF07)
     if (address >= 0xFF04 && address <= 0xFF07) {
-        return timer.read_reg(address);
+        if (timer) return timer->read_reg(address);
     }
 
     // IF
@@ -39,16 +41,26 @@ uint8_t Bus::read(uint16_t address) const {
 void Bus::write(uint16_t address, uint8_t value) {
     // External ROM (0x0000-0x7FFF) or RAM (0xA000-0xBFFF)
     if (address < 0x8000 || (address >= 0xA000 && address <= 0xBFFF)) {
-        if (cartridge)
+        if (cartridge) {
             cartridge->write(address, value);
+            return;
+        }
+    }
 
-        return;
+    // Joypad
+    if (address == 0xFF00) {
+        if (joypad) {
+            joypad->write(value);
+            return;
+        }
     }
 
     // Timer (0xFF04 - 0xFF07)
     if (address >= 0xFF04 && address <= 0xFF07) {
-        timer.write_reg(address, value);
-        return;
+        if (timer) {
+            timer->write_reg(address, value);
+            return;
+        }
     }
 
     // IF
