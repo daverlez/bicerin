@@ -3,6 +3,7 @@ find_package(GTest CONFIG REQUIRED)
 add_executable(unit_tests
         core/cpu_test.cpp
         core/joypad_test.cpp
+        core/ppu_test.cpp
         core/timer_test.cpp
 )
 

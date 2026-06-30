@@ -73,54 +73,45 @@ void Ppu::tick(uint8_t m_cycles) {
         return;
 
     cycles_accumulator += m_cycles;
-    Mode current_mode = static_cast<Mode>(stat & 0x03);
 
-    switch (current_mode) {
-        case Mode::OamSearch:
-            if (cycles_accumulator >= 20) {
-                cycles_accumulator -= 20;
-                change_mode(Mode::PixelTransfer);
+    while (true) {
+        Mode current_mode = static_cast<Mode>(stat & 0x03);
+
+        if (current_mode == Mode::OamSearch && cycles_accumulator >= 20) {
+            cycles_accumulator -= 20;
+            change_mode(Mode::PixelTransfer);
+        }
+        else if (current_mode == Mode::PixelTransfer && cycles_accumulator >= 43) {
+            cycles_accumulator -= 43;
+
+            // TODO: Scanline rendering
+
+            change_mode(Mode::HBlank);
+        }
+        else if (current_mode == Mode::HBlank && cycles_accumulator >= 51) {
+            cycles_accumulator -= 51;
+            ly++;
+            check_lyc();
+
+            if (ly == 144) {
+                change_mode(Mode::VBlank);
+                vblank_interrupt_requested = true;
+            } else {
+                change_mode(Mode::OamSearch);
             }
-            break;
+        }
+        else if (current_mode == Mode::VBlank && cycles_accumulator >= 114) {
+            cycles_accumulator -= 114;
+            ly++;
+            check_lyc();
 
-        case Mode::PixelTransfer:
-            if (cycles_accumulator >= 43) {
-                cycles_accumulator -= 43;
-
-                // TODO: Scanline rendering
-
-                change_mode(Mode::HBlank);
-            }
-            break;
-
-        case Mode::HBlank:
-            if (cycles_accumulator >= 51) {
-                cycles_accumulator -= 51;
-                ly++;
+            if (ly > 153) {
+                ly = 0;
                 check_lyc();
-
-                if (ly == 144) {
-                    change_mode(Mode::VBlank);
-                    vblank_interrupt_requested = true;
-                } else {
-                    change_mode(Mode::OamSearch);
-                }
+                change_mode(Mode::OamSearch);
             }
-            break;
-
-        case Mode::VBlank:
-            if (cycles_accumulator >= 114) {
-                cycles_accumulator -= 114;
-                ly++;
-                check_lyc();
-
-                if (ly > 153) {
-                    ly = 0;
-                    check_lyc();
-                    change_mode(Mode::OamSearch);
-                }
-            }
-            break;
+        }
+        else break;
     }
 }
 
