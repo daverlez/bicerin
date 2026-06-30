@@ -3,11 +3,12 @@
 #include <array>
 
 #include "cartridge.h"
+#include "joypad.h"
 #include "timer.h"
 
 class Bus {
 public:
-    explicit Bus(Timer& t, Cartridge* c);
+    Bus();
     ~Bus() = default;
 
     /// Reads a byte at a given 16-bit register.
@@ -19,9 +20,14 @@ public:
     /// Writes a byte at a given 16-bit register.
     void write(uint16_t address, uint8_t value);
 
+    void connect_timer(Timer* t) { timer = t; }
+    void connect_cartridge(Cartridge* c) { cartridge = c; }
+    void connect_joypad(Joypad* j) { joypad = j; }
+
 private:
-    Timer& timer;
-    Cartridge* cartridge;
+    Timer* timer{nullptr};
+    Cartridge* cartridge{nullptr};
+    Joypad* joypad{nullptr};
 
     std::array<uint8_t, 0x10000> memory{};  // 64 KB
     uint8_t ie_register{0}; // 0xFFFF - Interrupt Enable

@@ -2,6 +2,7 @@ add_library(core_lib STATIC
         bus.cpp
         cartridge.cpp
         cpu.cpp
+        joypad.cpp
         mbc1.cpp
         system.cpp
         timer.cpp
