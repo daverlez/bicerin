@@ -22,7 +22,8 @@ TEST(CpuTest, RegisterPairing) {
 
 TEST(CpuIntegrationTest, ExecuteAllLoadImmediate8Bit) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -63,7 +64,8 @@ TEST(CpuIntegrationTest, ExecuteAllLoadImmediate8Bit) {
 
 TEST(CpuIntegrationTest, ExecuteBlock1RegisterTransfers) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -85,7 +87,8 @@ TEST(CpuIntegrationTest, ExecuteBlock1RegisterTransfers) {
 
 TEST(CpuArithmeticTest, AddToAccumulator) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     // Simple addition
     cpu.reset();
@@ -126,7 +129,8 @@ TEST(CpuArithmeticTest, AddToAccumulator) {
 
 TEST(CpuArithmeticTest, SubAndCompare) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     // Subtraction (with half-carry)
     cpu.reset();
@@ -167,7 +171,8 @@ TEST(CpuArithmeticTest, SubAndCompare) {
 
 TEST(CpuArithmeticTest, AddWithCarry) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -186,7 +191,8 @@ TEST(CpuArithmeticTest, AddWithCarry) {
 
 TEST(CpuArithmeticTest, SubtractWithCarry) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -205,7 +211,8 @@ TEST(CpuArithmeticTest, SubtractWithCarry) {
 
 TEST(CpuLogicTest, LogicalAnd) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -223,7 +230,8 @@ TEST(CpuLogicTest, LogicalAnd) {
 
 TEST(CpuLogicTest, LogicalXorAndZeroFlag) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -241,7 +249,8 @@ TEST(CpuLogicTest, LogicalXorAndZeroFlag) {
 
 TEST(CpuLogicTest, LogicalOr) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -259,7 +268,8 @@ TEST(CpuLogicTest, LogicalOr) {
 
 TEST(CpuStackTest, PushAndPopRegisters) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -285,7 +295,8 @@ TEST(CpuStackTest, PushAndPopRegisters) {
 
 TEST(CpuControlFlowTest, CallAndReturn) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0100;
@@ -319,7 +330,8 @@ TEST(CpuControlFlowTest, CallAndReturn) {
 
 TEST(CpuMemoryTest, LoadHighRamInstructions) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -349,7 +361,8 @@ TEST(CpuMemoryTest, LoadHighRamInstructions) {
 
 TEST(CpuBitwiseTest, TestBitInstruction) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -379,7 +392,8 @@ TEST(CpuBitwiseTest, TestBitInstruction) {
 
 TEST(CpuBitwiseTest, SetAndResetInstructions) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -416,7 +430,8 @@ TEST(CpuBitwiseTest, SetAndResetInstructions) {
 
 TEST(CpuBitwiseTest, RotationsAndShifts) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -450,7 +465,8 @@ TEST(CpuBitwiseTest, RotationsAndShifts) {
 
 TEST(CpuStackMathTest, StackPointerOffset) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     // ADD SP, 10
     cpu.reset();
@@ -480,7 +496,8 @@ TEST(CpuStackMathTest, StackPointerOffset) {
 
 TEST(CpuControlFlowTest, JumpRelative) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     // JR imm8
     cpu.reset();
@@ -505,7 +522,8 @@ TEST(CpuControlFlowTest, JumpRelative) {
 
 TEST(CpuControlFlowTest, JumpRelativeConditional) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -532,7 +550,8 @@ TEST(CpuControlFlowTest, JumpRelativeConditional) {
 
 TEST(CpuBlock0Test, LoadStackPointerToMemory) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -553,7 +572,8 @@ TEST(CpuBlock0Test, LoadStackPointerToMemory) {
 
 TEST(CpuBlock0Test, LoadRegister16Immediate) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -573,7 +593,8 @@ TEST(CpuBlock0Test, LoadRegister16Immediate) {
 
 TEST(CpuBlock0Test, Add16BitToHL) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -591,7 +612,8 @@ TEST(CpuBlock0Test, Add16BitToHL) {
 
 TEST(CpuBlock0Test, IndirectLoadsWithHLAutoIncrement) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     // LD [HL+], A
     cpu.reset();
@@ -620,7 +642,8 @@ TEST(CpuBlock0Test, IndirectLoadsWithHLAutoIncrement) {
 
 TEST(CpuBlock0Test, IncrementAndDecrement16Bit) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     // INC BC
     cpu.reset();
@@ -647,7 +670,8 @@ TEST(CpuBlock0Test, IncrementAndDecrement16Bit) {
 
 TEST(CpuBlock0Test, IncrementAndDecrement8BitFlags) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     // INC B
     cpu.reset();
@@ -676,7 +700,8 @@ TEST(CpuBlock0Test, IncrementAndDecrement8BitFlags) {
 
 TEST(CpuBlock0Test, DecimalAdjustAccumulator) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
@@ -694,7 +719,8 @@ TEST(CpuBlock0Test, DecimalAdjustAccumulator) {
 
 TEST(CpuBlock0Test, AccumulatorAndFlagModifiers) {
     Cpu cpu;
-    Bus bus;
+    Timer timer;
+    Bus bus(timer);
 
     cpu.reset();
     cpu.pc = 0x0000;
