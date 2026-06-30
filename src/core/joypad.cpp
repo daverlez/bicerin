@@ -51,8 +51,6 @@ uint8_t Joypad::get_current_state() const {
 }
 
 uint8_t Joypad::read() const {
-    // I bit 6 e 7 restituiscono quasi sempre 1 sull'hardware originale.
-    // Assembliamo l'output con la selection corrente.
     return 0xC0 | selection | get_current_state();
 }
 
