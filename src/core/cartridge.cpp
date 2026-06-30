@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "core/cartridge.h"
+#include "core/mbc1.h"
 
 class RomOnly : public Cartridge {
 public:
@@ -38,6 +39,7 @@ std::unique_ptr<Cartridge> Cartridge::load(const std::string& filepath) {
     }
 
     uint8_t cartridge_type = rom_data[0x0147];
+    uint8_t ram_size_code = rom_data[0x0149];
 
     std::cout << "Cartridge loaded. Type: 0x" << std::hex << (int)cartridge_type << std::dec << "\n";
 
@@ -47,7 +49,10 @@ std::unique_ptr<Cartridge> Cartridge::load(const std::string& filepath) {
         case 0x09: // ROM + RAM + BATTERY
             return std::make_unique<RomOnly>(std::move(rom_data));
 
-        // TODO: MBC1 (0x01, 0x02, 0x03)
+        case 0x01: // MBC1
+        case 0x02: // MBC1 + RAM
+        case 0x03: // MBC1 + RAM + BATTERY
+            return std::make_unique<Mbc1>(std::move(rom_data), ram_size_code);
 
         default:
             std::cerr << "MBC not supported yet: 0x" << std::hex << (int)cartridge_type << "\n";
