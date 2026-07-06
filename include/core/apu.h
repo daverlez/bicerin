@@ -31,7 +31,7 @@ private:
         uint8_t duty{0};
 
         // Length
-        uint8_t length_counter{0};
+        uint16_t length_counter{0};
         bool length_enabled{false};
 
         // Volume Envelope
@@ -40,8 +40,21 @@ private:
         bool envelope_increase{false};
     };
 
+    struct WaveChannel {
+        bool enabled{false};
+        uint16_t timer{0};
+        uint8_t wave_step{0};
+        uint16_t frequency{0};
+        uint8_t volume_code{0};
+
+        uint16_t length_counter{0};
+        bool length_enabled{false};
+    };
+
     PulseChannel channel1;
     PulseChannel channel2;
+
+    WaveChannel channel3;
 
     const std::array<std::array<uint8_t, 8>, 4> duty_table = {{
         {0, 0, 0, 0, 0, 0, 0, 1}, // 12.5%
