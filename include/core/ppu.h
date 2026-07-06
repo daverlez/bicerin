@@ -31,6 +31,9 @@ public:
     bool is_stat_interrupt_requested() const { return stat_interrupt_requested; }
     void clear_stat_interrupt() { stat_interrupt_requested = false; }
 
+    /// Sets the palette for non-color games
+    void set_palette(const std::array<uint32_t, 4>& new_colors) { colors = new_colors; }
+
 private:
     std::array<uint8_t, 8192> vram{}; // RAM, 8 KB  (0x8000 - 0x9FFF)
     std::array<uint8_t, 160> oam{};   // OAM, 160 B (0xFE00 - 0xFE9F)
@@ -53,7 +56,7 @@ private:
     bool stat_interrupt_requested{false};
 
     std::array<uint32_t, 160 * 144> frame_buffer{};
-    const std::array<uint32_t, 4> colors = { 0xFFE0F8D0, 0xFF88C070, 0xFF346856, 0xFF081820 };
+    std::array<uint32_t, 4> colors = { 0xFFE0F8D0, 0xFF88C070, 0xFF346856, 0xFF081820 };
 
     uint8_t window_line{0};
 

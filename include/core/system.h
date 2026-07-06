@@ -21,6 +21,9 @@ public:
     void press_button(Joypad::Button button) { joypad.press(button); }
     void release_button(Joypad::Button button) { joypad.release(button); }
 
+    /// Sets the palette for non-color games
+    void set_palette(const std::array<uint32_t, 4>& colors) { ppu.set_palette(colors); }
+
 private:
     std::unique_ptr<Cartridge> cartridge;
     Timer timer;
