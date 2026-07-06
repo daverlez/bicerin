@@ -47,6 +47,7 @@ void Ppu::write(uint16_t address, uint8_t value) {
             if (was_on && !is_on) {
                 ly = 0;
                 cycles_accumulator = 0;
+                window_line = 0;
                 stat = (stat & 0xFC) | static_cast<uint8_t>(Mode::HBlank);
             }
             break;
@@ -106,6 +107,7 @@ void Ppu::tick(uint8_t m_cycles) {
 
             if (ly > 153) {
                 ly = 0;
+                window_line = 0;
                 check_lyc();
                 change_mode(Mode::OamSearch);
             }
@@ -138,20 +140,16 @@ void Ppu::check_lyc() {
 }
 
 void Ppu::render_scanline() {
-    // Bit 0: Abilita il Background
-    if (lcdc & 0x01) {
+    if (lcdc & 0x01)
         render_background();
-    } else {
-        // Se il background è spento, puliamo la riga con il colore 0 (bianco)
-        for (int x = 0; x < 160; x++) {
+    else
+        for (int x = 0; x < 160; x++)
             frame_buffer[ly * 160 + x] = colors[0];
-        }
-    }
 
-    // Bit 1: Abilita gli Sprite (OBJ)
-    if (lcdc & 0x02) {
+    render_window();
+
+    if (lcdc & 0x02)
         render_sprites();
-    }
 }
 
 void Ppu::render_background() {
@@ -192,6 +190,61 @@ void Ppu::render_background() {
         uint8_t palette_color = (bgp >> (color_id * 2)) & 0x03;
         frame_buffer[ly * 160 + x] = colors[palette_color];
     }
+}
+
+void Ppu::render_window() {
+    if ((lcdc & 0x20) == 0 || (lcdc & 0x01) == 0)
+        return;
+
+    if (ly < wy)
+        return;
+
+    int window_x = wx - 7;
+
+    if (window_x >= 160)
+        return;
+
+    uint16_t tile_map_base = (lcdc & 0x40) ? 0x1C00 : 0x1800;
+
+    bool is_unsigned_mode = (lcdc & 0x10) != 0;
+    uint16_t tile_data_base = is_unsigned_mode ? 0x0000 : 0x1000;
+
+    uint16_t tile_row = (window_line / 8) * 32;
+    uint8_t pixel_row_in_tile = window_line % 8;
+
+    for (int x = 0; x < 160; x++) {
+        if (x < window_x)
+            continue;
+
+        int win_x = x - window_x;
+
+        uint16_t tile_col = win_x / 8;
+        uint8_t pixel_col_in_tile = win_x % 8;
+
+        uint16_t tile_address = tile_map_base + tile_row + tile_col;
+        uint8_t tile_id = vram[tile_address];
+
+        uint16_t tile_location = tile_data_base;
+        if (is_unsigned_mode) {
+            tile_location += tile_id * 16;
+        } else {
+            int8_t signed_id = static_cast<int8_t>(tile_id);
+            tile_location += (signed_id + 128) * 16;
+        }
+
+        uint16_t line_address = tile_location + (pixel_row_in_tile * 2);
+        uint8_t byte_low = vram[line_address];
+        uint8_t byte_high = vram[line_address + 1];
+
+        uint8_t color_bit = 7 - pixel_col_in_tile;
+        uint8_t color_id = ((byte_high >> color_bit) & 0x01) << 1 | ((byte_low >> color_bit) & 0x01);
+
+        uint8_t palette_color = (bgp >> (color_id * 2)) & 0x03;
+
+        frame_buffer[ly * 160 + x] = colors[palette_color];
+    }
+
+    window_line++;
 }
 
 void Ppu::render_sprites() {

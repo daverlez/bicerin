@@ -55,10 +55,13 @@ private:
     std::array<uint32_t, 160 * 144> frame_buffer{};
     const std::array<uint32_t, 4> colors = { 0xFFE0F8D0, 0xFF88C070, 0xFF346856, 0xFF081820 };
 
+    uint8_t window_line{0};
+
     void change_mode(Mode new_mode);
     void check_lyc();
 
     void render_scanline();
     void render_background();
+    void render_window();
     void render_sprites();
 };
