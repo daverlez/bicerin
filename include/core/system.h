@@ -31,4 +31,5 @@ private:
     Cpu cpu;
     Joypad joypad;
     Ppu ppu;
+    Apu apu;
 };

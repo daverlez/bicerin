@@ -22,6 +22,12 @@ uint8_t Bus::read(uint16_t address) const {
         if (ppu) return ppu->read(address);
     }
 
+    // APU (0xFF10 - 0xFF3F)
+    if (address >= 0xFF10 && address <= 0xFF3F) {
+        if (apu) return apu->read(address);
+        return 0xFF;
+    }
+
     // Joypad
     if (address == 0xFF00) {
         if (joypad) return joypad->read();
@@ -70,6 +76,13 @@ void Bus::write(uint16_t address, uint8_t value) {
         (address >= 0xFF40 && address <= 0xFF4B)) {
         if (ppu) {
             ppu->write(address, value);
+            return;
+        }
+    }
+
+    if (address >= 0xFF10 && address <= 0xFF3F) {
+        if (apu) {
+            apu->write(address, value);
             return;
         }
     }

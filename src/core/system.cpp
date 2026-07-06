@@ -14,6 +14,7 @@ System::System(const std::string& rom_path)
     bus.connect_cartridge(cartridge.get());
     bus.connect_joypad(&joypad);
     bus.connect_ppu(&ppu);
+    bus.connect_apu(&apu);
 }
 
 void System::run_frame() {
@@ -25,6 +26,7 @@ void System::run_frame() {
 
         timer.tick(cycles);
         ppu.tick(cycles);
+        apu.tick(cycles);
 
         if (timer.is_interrupt_requested()) {
             bus.request_interrupt(2);
