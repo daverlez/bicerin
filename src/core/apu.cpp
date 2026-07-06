@@ -19,7 +19,7 @@ void Apu::write(uint16_t address, uint8_t value) {
     if (address == 0xFF11)
         channel1.length_counter = 64 - (value & 0x3F);
 
-    // Channel 1 (write in NR14)
+    // Channel 1 (NR14)
     if (address == 0xFF14 && (value & 0x80)) {
         channel1.enabled = true;
         channel1.frequency = ((value & 0x07) << 8) | registers[0xFF13 - 0xFF10];
@@ -75,9 +75,43 @@ void Apu::write(uint16_t address, uint8_t value) {
         channel3.frequency = ((value & 0x07) << 8) | registers[0xFF1D - 0xFF10];
         channel3.timer = (2048 - channel3.frequency);
         channel3.wave_step = 0;
+
+        // Volume code (NR32)
         channel3.volume_code = (registers[0xFF1C - 0xFF10] >> 5) & 0x03;
+
+        // Length (NR34)
         channel3.length_enabled = (value & 0x40) != 0;
         if (channel3.length_counter == 0) channel3.length_counter = 256;
+    }
+
+    // Channel 4 length (NR41)
+    if (address == 0xFF20) {
+        channel4.length_counter = 64 - (value & 0x3F);
+    }
+
+    // Channel 4 trigger (NR44)
+    if (address == 0xFF23 && (value & 0x80)) {
+        channel4.enabled = true;
+        channel4.lfsr = 0x7FFF;
+
+        uint8_t nr43 = registers[0xFF22 - 0xFF10];
+        channel4.shift_clock = nr43 >> 4;
+        channel4.width_mode = (nr43 & 0x08) != 0;
+        channel4.divisor_code = nr43 & 0x07;
+
+        uint16_t divisor = (channel4.divisor_code == 0) ? 2 : (channel4.divisor_code * 4);
+        channel4.timer = divisor << channel4.shift_clock;
+
+        // Envelope (NR42)
+        uint8_t nr42 = registers[0xFF21 - 0xFF10];
+        channel4.volume = nr42 >> 4;
+        channel4.envelope_increase = (nr42 & 0x08) != 0;
+        channel4.envelope_period = nr42 & 0x07;
+        channel4.envelope_timer = channel4.envelope_period > 0 ? channel4.envelope_period : 8;
+
+        // Length (NR44)
+        channel4.length_enabled = (value & 0x40) != 0;
+        if (channel4.length_counter == 0) channel4.length_counter = 64;
     }
 }
 
@@ -130,6 +164,26 @@ void Apu::tick(uint8_t m_cycles) {
         }
     }
 
+    if (channel4.enabled) {
+        if (channel4.timer <= m_cycles) {
+            uint16_t divisor = (channel4.divisor_code == 0) ? 2 : (channel4.divisor_code * 4);
+            channel4.timer = divisor << channel4.shift_clock;
+
+            // LFSR
+            uint8_t xor_bit = (channel4.lfsr & 0x01) ^ ((channel4.lfsr >> 1) & 0x01);
+
+            channel4.lfsr >>= 1;
+            channel4.lfsr |= (xor_bit << 14);
+
+            if (channel4.width_mode) {
+                channel4.lfsr &= ~(1 << 6);
+                channel4.lfsr |= (xor_bit << 6);
+            }
+        } else {
+            channel4.timer -= m_cycles;
+        }
+    }
+
     // Sampling synchronization
     sample_tracker += m_cycles * 44100;
 
@@ -171,7 +225,13 @@ void Apu::tick(uint8_t m_cycles) {
             ch3_out = sample / 15.0f;
         }
 
-        float mix = (ch1_out + ch2_out + ch3_out) * 0.1f;
+        float ch4_out = 0.0f;
+        if (channel4.enabled && channel4.volume > 0) {
+            uint8_t amplitude = (~channel4.lfsr) & 0x01;
+            ch4_out = (amplitude * channel4.volume) / 15.0f;
+        }
+
+        float mix = (ch1_out + ch2_out + ch3_out + ch4_out) * 0.1f;
 
         // TODO: add up channels 3 and 4
 
@@ -201,6 +261,13 @@ void Apu::clock_length() {
             channel3.enabled = false;
         }
     }
+
+    if (channel4.length_enabled && channel4.length_counter > 0) {
+        channel4.length_counter--;
+        if (channel4.length_counter == 0) {
+            channel4.enabled = false;
+        }
+    }
 }
 
 void Apu::clock_sweep() {
@@ -208,7 +275,7 @@ void Apu::clock_sweep() {
 }
 
 void Apu::clock_volume() {
-    auto process_envelope = [](PulseChannel& channel) {
+    auto process_envelope = [](auto& channel) {
         if (channel.envelope_period > 0) {
             channel.envelope_timer--;
             if (channel.envelope_timer == 0) {
@@ -224,4 +291,5 @@ void Apu::clock_volume() {
 
     process_envelope(channel1);
     process_envelope(channel2);
+    process_envelope(channel4);
 }

@@ -51,10 +51,28 @@ private:
         bool length_enabled{false};
     };
 
+    struct NoiseChannel {
+        bool enabled{false};
+        uint16_t timer{0};
+        uint16_t lfsr{0x7FFF};
+        uint8_t volume{0};
+
+        uint16_t length_counter{0};
+        bool length_enabled{false};
+
+        uint8_t envelope_timer{0};
+        uint8_t envelope_period{0};
+        bool envelope_increase{false};
+
+        uint8_t shift_clock{0};
+        bool width_mode{false};
+        uint8_t divisor_code{0};
+    };
+
     PulseChannel channel1;
     PulseChannel channel2;
-
     WaveChannel channel3;
+    NoiseChannel channel4;
 
     const std::array<std::array<uint8_t, 8>, 4> duty_table = {{
         {0, 0, 0, 0, 0, 0, 0, 1}, // 12.5%
