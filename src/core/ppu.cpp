@@ -138,10 +138,20 @@ void Ppu::check_lyc() {
 }
 
 void Ppu::render_scanline() {
-    if (lcdc & 0x01)
+    // Bit 0: Abilita il Background
+    if (lcdc & 0x01) {
         render_background();
+    } else {
+        // Se il background è spento, puliamo la riga con il colore 0 (bianco)
+        for (int x = 0; x < 160; x++) {
+            frame_buffer[ly * 160 + x] = colors[0];
+        }
+    }
 
-    // TODO: render_window() and render_sprites()
+    // Bit 1: Abilita gli Sprite (OBJ)
+    if (lcdc & 0x02) {
+        render_sprites();
+    }
 }
 
 void Ppu::render_background() {
@@ -181,5 +191,55 @@ void Ppu::render_background() {
 
         uint8_t palette_color = (bgp >> (color_id * 2)) & 0x03;
         frame_buffer[ly * 160 + x] = colors[palette_color];
+    }
+}
+
+void Ppu::render_sprites() {
+    bool use_8x16 = (lcdc & 0x04) != 0;
+    int sprite_height = use_8x16 ? 16 : 8;
+
+    for (int i = 39; i >= 0; i--) {
+        int index = i * 4;
+
+        int y_pos = oam[index] - 16;
+        int x_pos = oam[index + 1] - 8;
+        uint8_t tile_id = oam[index + 2];
+        uint8_t attributes = oam[index + 3];
+
+        if (ly >= y_pos && ly < (y_pos + sprite_height)) {
+            bool y_flip = (attributes & 0x40) != 0;
+            bool x_flip = (attributes & 0x20) != 0;
+            bool bg_priority = (attributes & 0x80) != 0;
+            uint8_t palette = (attributes & 0x10) ? obp1 : obp0;
+
+            int line = ly - y_pos;
+            if (y_flip)
+                line = sprite_height - 1 - line;
+
+            if (use_8x16)
+                tile_id &= 0xFE;
+
+            uint16_t tile_address = (tile_id * 16) + (line * 2);
+            uint8_t byte_low = vram[tile_address];
+            uint8_t byte_high = vram[tile_address + 1];
+
+            for (int tile_pixel = 0; tile_pixel < 8; tile_pixel++) {
+                int pixel_x = x_pos + tile_pixel;
+
+                if (pixel_x < 0 || pixel_x >= 160) continue;
+
+                int color_bit = x_flip ? tile_pixel : 7 - tile_pixel;
+                uint8_t color_id = ((byte_high >> color_bit) & 0x01) << 1 | ((byte_low >> color_bit) & 0x01);
+
+                if (color_id == 0) continue;
+
+                if (bg_priority)
+                    if (frame_buffer[ly * 160 + pixel_x] != colors[bgp & 0x03])
+                        continue;
+
+                uint8_t palette_color = (palette >> (color_id * 2)) & 0x03;
+                frame_buffer[ly * 160 + pixel_x] = colors[palette_color];
+            }
+        }
     }
 }

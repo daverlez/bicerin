@@ -60,4 +60,5 @@ private:
 
     void render_scanline();
     void render_background();
+    void render_sprites();
 };
