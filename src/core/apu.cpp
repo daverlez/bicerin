@@ -18,6 +18,17 @@ void Apu::write(uint16_t address, uint8_t value) {
 
 void Apu::tick(uint8_t m_cycles) {
     cycles_accumulator += m_cycles;
+    sample_tracker += m_cycles * 44100;  // Sample rate: 44.1 kHz
 
-    // TODO: frame sequencer
+    while (sample_tracker >= 1048576) {
+        sample_tracker -= 1048576;
+
+        float sample_left = 0.0f;
+        float sample_right = 0.0f;
+
+        // TODO: add up channels
+
+        audio_buffer.push_back(sample_left);
+        audio_buffer.push_back(sample_right);
+    }
 }
