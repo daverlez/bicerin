@@ -22,6 +22,9 @@ public:
     /// Advances PPU's state machine using CPU's M-cycles.
     void tick(uint8_t cycles);
 
+    /// Returns the frame buffer for the frontend.
+    const std::array<uint32_t, 160 * 144>& get_frame_buffer() const { return frame_buffer; }
+
     bool is_vblank_interrupt_requested() const { return vblank_interrupt_requested; }
     void clear_vblank_interrupt() { vblank_interrupt_requested = false; }
 

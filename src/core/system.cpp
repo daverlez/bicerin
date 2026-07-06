@@ -16,9 +16,13 @@ System::System(const std::string& rom_path)
     bus.connect_ppu(&ppu);
 }
 
-void System::run() {
-    while (true) {
+void System::run_frame() {
+    uint32_t cycles_this_frame = 0;
+    const uint32_t MAX_CYCLES = 17556;
+
+    while (cycles_this_frame < MAX_CYCLES) {
         uint8_t cycles = cpu.step(bus);
+
         timer.tick(cycles);
         ppu.tick(cycles);
 
@@ -41,5 +45,7 @@ void System::run() {
             bus.request_interrupt(1);
             ppu.clear_stat_interrupt();
         }
+
+        cycles_this_frame += cycles;
     }
 }
