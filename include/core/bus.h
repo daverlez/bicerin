@@ -4,6 +4,7 @@
 
 #include "cartridge.h"
 #include "joypad.h"
+#include "ppu.h"
 #include "timer.h"
 
 class Bus {
@@ -23,11 +24,13 @@ public:
     void connect_timer(Timer* t) { timer = t; }
     void connect_cartridge(Cartridge* c) { cartridge = c; }
     void connect_joypad(Joypad* j) { joypad = j; }
+    void connect_ppu(Ppu* p) { ppu = p; }
 
 private:
     Timer* timer{nullptr};
     Cartridge* cartridge{nullptr};
     Joypad* joypad{nullptr};
+    Ppu* ppu{nullptr};
 
     std::array<uint8_t, 0x10000> memory{};  // 64 KB
     uint8_t ie_register{0}; // 0xFFFF - Interrupt Enable
