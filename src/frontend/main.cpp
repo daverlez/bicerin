@@ -15,6 +15,22 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+    SDL_AudioSpec desired_spec;
+    SDL_zero(desired_spec);
+    desired_spec.freq = 44100;
+    desired_spec.format = AUDIO_F32SYS;
+    desired_spec.channels = 2;
+    desired_spec.samples = 2048;
+    desired_spec.callback = nullptr;
+
+    SDL_AudioDeviceID audio_device = SDL_OpenAudioDevice(nullptr, 0, &desired_spec, nullptr, 0);
+    if (audio_device == 0) {
+        std::cerr << "Error opening audio device: " << SDL_GetError() << "\n";
+        return -1;
+    }
+
+    SDL_PauseAudioDevice(audio_device, 0);
+
     const int SCALE = 4;
     SDL_Window* window = SDL_CreateWindow(
         "Bicerin",
@@ -85,6 +101,12 @@ int main(int argc, char* argv[]) {
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
 
+        const auto& audio_buffer = gb_system.get_audio_buffer();
+        if (!audio_buffer.empty()) {
+            SDL_QueueAudio(audio_device, audio_buffer.data(), audio_buffer.size() * sizeof(float));
+            gb_system.clear_audio_buffer();
+        }
+
         uint32_t frame_time = SDL_GetTicks() - frame_start;
         if (FRAME_DELAY > frame_time)
             SDL_Delay(FRAME_DELAY - frame_time);
@@ -93,6 +115,7 @@ int main(int argc, char* argv[]) {
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    SDL_CloseAudioDevice(audio_device);
     SDL_Quit();
 
     return 0;
