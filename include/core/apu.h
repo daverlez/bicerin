@@ -22,7 +22,41 @@ public:
 private:
     std::array<uint8_t, 48> registers{};
 
+    struct PulseChannel {
+        bool enabled{false};
+        uint16_t timer{0};
+        uint8_t duty_step{0};
+        uint16_t frequency{0};
+        uint8_t volume{0};
+        uint8_t duty{0};
+
+        // Length
+        uint8_t length_counter{0};
+        bool length_enabled{false};
+
+        // Volume Envelope
+        uint8_t envelope_timer{0};
+        uint8_t envelope_period{0};
+        bool envelope_increase{false};
+    };
+
+    PulseChannel channel1;
+    PulseChannel channel2;
+
+    const std::array<std::array<uint8_t, 8>, 4> duty_table = {{
+        {0, 0, 0, 0, 0, 0, 0, 1}, // 12.5%
+        {1, 0, 0, 0, 0, 0, 0, 1}, // 25%
+        {1, 0, 0, 0, 0, 1, 1, 1}, // 50%
+        {0, 1, 1, 1, 1, 1, 1, 0}  // 75%
+    }};
+
     uint16_t cycles_accumulator{0};
+    uint8_t frame_sequencer_step{0};
+
     uint32_t sample_tracker{0};
     std::vector<float> audio_buffer;
+
+    void clock_length();
+    void clock_sweep();
+    void clock_volume();
 };

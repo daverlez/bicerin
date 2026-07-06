@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
 
     System gb_system(argv[1]);
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         std::cerr << "Error initializing SDL: " << SDL_GetError() << "\n";
         return -1;
     }
