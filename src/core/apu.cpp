@@ -65,6 +65,16 @@ void Apu::write(uint16_t address, uint8_t value) {
         // Length (NR14)
         channel1.length_enabled = (value & 0x40) != 0;
         if (channel1.length_counter == 0) channel1.length_counter = 64;
+
+        // Sweep (NR10)
+        channel1.shadow_frequency = channel1.frequency;
+
+        uint8_t nr10 = registers[0xFF10 - 0xFF10];
+        channel1.sweep_period = (nr10 >> 4) & 0x07;
+        channel1.sweep_direction = (nr10 >> 3) & 0x01;
+        channel1.sweep_shift = nr10 & 0x07;
+        channel1.sweep_timer = channel1.sweep_period > 0 ? channel1.sweep_period : 8;
+        channel1.sweep_enabled = (channel1.sweep_period > 0 || channel1.sweep_shift > 0);
     }
 
     // Channel 2 length (NR21)
@@ -321,7 +331,33 @@ void Apu::clock_length() {
 }
 
 void Apu::clock_sweep() {
-    // TODO
+    if (channel1.sweep_timer > 0)
+        channel1.sweep_timer--;
+
+    if (channel1.sweep_timer == 0) {
+        channel1.sweep_timer = channel1.sweep_period > 0 ? channel1.sweep_period : 8;
+
+        if (channel1.sweep_enabled && channel1.sweep_period > 0) {
+            uint16_t delta = channel1.shadow_frequency >> channel1.sweep_shift;
+            uint16_t new_freq = channel1.shadow_frequency;
+
+            if (channel1.sweep_direction == 1)
+                new_freq -= delta;
+            else
+                new_freq += delta;
+
+            if (new_freq > 2047)
+                channel1.enabled = false;
+            else if (channel1.sweep_shift > 0) {
+                channel1.frequency = new_freq;
+                channel1.shadow_frequency = new_freq;
+
+                registers[0xFF13 - 0xFF10] = new_freq & 0xFF;
+                uint8_t nr14 = registers[0xFF14 - 0xFF10];
+                registers[0xFF14 - 0xFF10] = (nr14 & 0xF8) | ((new_freq >> 8) & 0x07);
+            }
+        }
+    }
 }
 
 void Apu::clock_volume() {

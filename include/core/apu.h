@@ -38,6 +38,14 @@ private:
         uint8_t envelope_timer{0};
         uint8_t envelope_period{0};
         bool envelope_increase{false};
+
+        // Sweep
+        uint8_t sweep_timer{0};
+        uint8_t sweep_period{0};
+        uint8_t sweep_direction{0};
+        uint8_t sweep_shift{0};
+        bool sweep_enabled{false};
+        uint16_t shadow_frequency{0};
     };
 
     struct WaveChannel {
