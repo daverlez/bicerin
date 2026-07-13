@@ -5,6 +5,16 @@ Apu::Apu() {
 }
 
 uint8_t Apu::read(uint16_t address) const {
+    // NR52
+    if (address == 0xFF26) {
+        uint8_t val = registers[0xFF26 - 0xFF10] & 0x80;
+        if (channel1.enabled) val |= 0x01;
+        if (channel2.enabled) val |= 0x02;
+        if (channel3.enabled) val |= 0x04;
+        if (channel4.enabled) val |= 0x08;
+        return val | 0x70;
+    }
+
     if (address >= 0xFF10 && address <= 0xFF3F)
         return registers[address - 0xFF10];
 
@@ -12,6 +22,25 @@ uint8_t Apu::read(uint16_t address) const {
 }
 
 void Apu::write(uint16_t address, uint8_t value) {
+    // NR52
+    if (address == 0xFF26) {
+        registers[0xFF26 - 0xFF10] = value;
+
+        if ((value & 0x80) == 0) {
+            channel1.enabled = false;
+            channel2.enabled = false;
+            channel3.enabled = false;
+            channel4.enabled = false;
+
+            for (int i = 0x00; i <= 0x15; i++)
+                registers[i] = 0;
+        }
+        return;
+    }
+
+    if ((registers[0xFF26 - 0xFF10] & 0x80) == 0 && address < 0xFF30)
+        return;
+
     if (address >= 0xFF10 && address <= 0xFF3F)
         registers[address - 0xFF10] = value;
 
@@ -231,12 +260,33 @@ void Apu::tick(uint8_t m_cycles) {
             ch4_out = (amplitude * channel4.volume) / 15.0f;
         }
 
-        float mix = (ch1_out + ch2_out + ch3_out + ch4_out) * 0.1f;
+        // Panning
+        uint8_t nr51 = registers[0xFF25 - 0xFF10];
+        float left_mix = 0.0f;
+        float right_mix = 0.0f;
 
-        // TODO: add up channels 3 and 4
+        if (nr51 & 0x10) left_mix += ch1_out;
+        if (nr51 & 0x01) right_mix += ch1_out;
 
-        audio_buffer.push_back(mix);    // Left
-        audio_buffer.push_back(mix);    // Right
+        if (nr51 & 0x20) left_mix += ch2_out;
+        if (nr51 & 0x02) right_mix += ch2_out;
+
+        if (nr51 & 0x40) left_mix += ch3_out;
+        if (nr51 & 0x04) right_mix += ch3_out;
+
+        if (nr51 & 0x80) left_mix += ch4_out;
+        if (nr51 & 0x08) right_mix += ch4_out;
+
+        // Volume master
+        uint8_t nr50 = registers[0xFF24 - 0xFF10];
+        uint8_t left_vol = ((nr50 >> 4) & 0x07) + 1;
+        uint8_t right_vol = (nr50 & 0x07) + 1;
+
+        float final_left = (left_mix * (left_vol / 8.0f)) * 0.1f;
+        float final_right = (right_mix * (right_vol / 8.0f)) * 0.1f;
+
+        audio_buffer.push_back(final_left);
+        audio_buffer.push_back(final_right);
     }
 }
 

@@ -67,7 +67,7 @@ private:
 std::unique_ptr<Cartridge> Cartridge::load(const std::string& filepath) {
     std::ifstream file(filepath, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
-        std::cerr << "Error:: cannot oper ROM " << filepath << "\n";
+        std::cerr << "Error:: cannot open ROM " << filepath << "\n";
         return nullptr;
     }
 
