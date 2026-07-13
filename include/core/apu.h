@@ -24,7 +24,7 @@ private:
 
     struct PulseChannel {
         bool enabled{false};
-        uint16_t timer{0};
+        int32_t timer{0};
         uint8_t duty_step{0};
         uint16_t frequency{0};
         uint8_t volume{0};
@@ -50,7 +50,7 @@ private:
 
     struct WaveChannel {
         bool enabled{false};
-        uint16_t timer{0};
+        int32_t timer{0};
         uint8_t wave_step{0};
         uint16_t frequency{0};
         uint8_t volume_code{0};
@@ -61,7 +61,7 @@ private:
 
     struct NoiseChannel {
         bool enabled{false};
-        uint16_t timer{0};
+        int32_t timer{0};
         uint16_t lfsr{0x7FFF};
         uint8_t volume{0};
 
@@ -94,6 +94,9 @@ private:
 
     uint32_t sample_tracker{0};
     std::vector<float> audio_buffer;
+
+    float hp_cap_left = 0.0f;
+    float hp_cap_right = 0.0f;
 
     void clock_length();
     void clock_sweep();

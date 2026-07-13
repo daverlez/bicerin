@@ -50,7 +50,10 @@ void Apu::write(uint16_t address, uint8_t value) {
 
     // Channel 1 (NR14)
     if (address == 0xFF14 && (value & 0x80)) {
-        channel1.enabled = true;
+        bool dac_enabled = (registers[0xFF12 - 0xFF10] & 0xF8) != 0;
+        if (dac_enabled)
+            channel1.enabled = true;
+
         channel1.frequency = ((value & 0x07) << 8) | registers[0xFF13 - 0xFF10];
         channel1.timer = (2048 - channel1.frequency);
         channel1.duty = registers[0xFF11 - 0xFF10] >> 6;
@@ -83,7 +86,10 @@ void Apu::write(uint16_t address, uint8_t value) {
 
     // Channel 2 trigger (NR24)
     if (address == 0xFF19 && (value & 0x80)) {
-        channel2.enabled = true;
+        bool dac_enabled = (registers[0xFF17 - 0xFF10] & 0xF8) != 0;
+        if (dac_enabled)
+            channel2.enabled = true;
+
         channel2.frequency = ((value & 0x07) << 8) | registers[0xFF18 - 0xFF10];
         channel2.timer = (2048 - channel2.frequency);
         channel2.duty = registers[0xFF16 - 0xFF10] >> 6;
@@ -107,7 +113,6 @@ void Apu::write(uint16_t address, uint8_t value) {
     // Channel 3 trigger (NR34)
     if (address == 0xFF1E && (value & 0x80)) {
         bool dac_enabled = (registers[0xFF1A - 0xFF10] & 0x80) != 0;
-
         if (dac_enabled)
             channel3.enabled = true;
 
@@ -130,7 +135,10 @@ void Apu::write(uint16_t address, uint8_t value) {
 
     // Channel 4 trigger (NR44)
     if (address == 0xFF23 && (value & 0x80)) {
-        channel4.enabled = true;
+        bool dac_enabled = (registers[0xFF21 - 0xFF10] & 0xF8) != 0;
+        if (dac_enabled)
+            channel4.enabled = true;
+
         channel4.lfsr = 0x7FFF;
 
         uint8_t nr43 = registers[0xFF22 - 0xFF10];
@@ -151,6 +159,34 @@ void Apu::write(uint16_t address, uint8_t value) {
         // Length (NR44)
         channel4.length_enabled = (value & 0x40) != 0;
         if (channel4.length_counter == 0) channel4.length_counter = 64;
+    }
+
+    // Channel 1 (NR12) - Volume / Envelope
+    if (address == 0xFF12) {
+        registers[address - 0xFF10] = value;
+        bool dac_enabled = (value & 0xF8) != 0;
+        if (!dac_enabled) channel1.enabled = false;
+    }
+
+    // Channel 2 (NR22) - Volume / Envelope
+    if (address == 0xFF17) {
+        registers[address - 0xFF10] = value;
+        bool dac_enabled = (value & 0xF8) != 0;
+        if (!dac_enabled) channel2.enabled = false;
+    }
+
+    // Channel 3 (NR30) - DAC Enable
+    if (address == 0xFF1A) {
+        registers[address - 0xFF10] = value;
+        bool dac_enabled = (value & 0x80) != 0;
+        if (!dac_enabled) channel3.enabled = false;
+    }
+
+    // Channel 4 (NR42) - Volume / Envelope
+    if (address == 0xFF21) {
+        registers[address - 0xFF10] = value;
+        bool dac_enabled = (value & 0xF8) != 0;
+        if (!dac_enabled) channel4.enabled = false;
     }
 }
 
@@ -177,40 +213,37 @@ void Apu::tick(uint8_t m_cycles) {
     }
 
     if (channel1.enabled) {
-        if (channel1.timer <= m_cycles) {
-            channel1.timer = (2048 - channel1.frequency);
+        channel1.timer -= m_cycles;
+        while (channel1.timer <= 0) {
+            channel1.timer += (2048 - channel1.frequency);
             channel1.duty_step = (channel1.duty_step + 1) % 8;
-        } else {
-            channel1.timer -= m_cycles;
         }
     }
 
     if (channel2.enabled) {
-        if (channel2.timer <= m_cycles) {
-            channel2.timer = (2048 - channel2.frequency);
+        channel2.timer -= m_cycles;
+        if (channel2.timer <= 0) {
+            channel2.timer += (2048 - channel2.frequency);
             channel2.duty_step = (channel2.duty_step + 1) % 8;
-        } else {
-            channel2.timer -= m_cycles;
         }
     }
 
     if (channel3.enabled) {
-        if (channel3.timer <= m_cycles * 2) {
-            channel3.timer = (2048 - channel3.frequency);
+        channel3.timer -= m_cycles * 2;
+        while (channel3.timer <= 0) {
+            channel3.timer += (2048 - channel3.frequency);
             channel3.wave_step = (channel3.wave_step + 1) % 32;
-        } else {
-            channel3.timer -= m_cycles * 2;
         }
     }
 
     if (channel4.enabled) {
-        if (channel4.timer <= m_cycles) {
+        channel4.timer -= m_cycles;
+
+        while (channel4.timer <= 0) {
             uint16_t divisor = (channel4.divisor_code == 0) ? 2 : (channel4.divisor_code * 4);
-            channel4.timer = divisor << channel4.shift_clock;
+            channel4.timer += (divisor << channel4.shift_clock);
 
-            // LFSR
             uint8_t xor_bit = (channel4.lfsr & 0x01) ^ ((channel4.lfsr >> 1) & 0x01);
-
             channel4.lfsr >>= 1;
             channel4.lfsr |= (xor_bit << 14);
 
@@ -218,8 +251,6 @@ void Apu::tick(uint8_t m_cycles) {
                 channel4.lfsr &= ~(1 << 6);
                 channel4.lfsr |= (xor_bit << 6);
             }
-        } else {
-            channel4.timer -= m_cycles;
         }
     }
 
@@ -295,8 +326,14 @@ void Apu::tick(uint8_t m_cycles) {
         float final_left = (left_mix * (left_vol / 8.0f)) * 0.1f;
         float final_right = (right_mix * (right_vol / 8.0f)) * 0.1f;
 
-        audio_buffer.push_back(final_left);
-        audio_buffer.push_back(final_right);
+        float out_left = final_left - hp_cap_left;
+        hp_cap_left = final_left - out_left * 0.996f;
+
+        float out_right = final_right - hp_cap_right;
+        hp_cap_right = final_right - out_right * 0.996f;
+
+        audio_buffer.push_back(out_left);
+        audio_buffer.push_back(out_right);
     }
 }
 
