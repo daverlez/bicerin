@@ -17,7 +17,7 @@ void Cpu::reset() {
     registers_.pc = 0x0100;
 }
 
-auto Cpu::tick() -> uint8_t {
+uint8_t Cpu::tick() {
     // TODO
     return 1;
 }

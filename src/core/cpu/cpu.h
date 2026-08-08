@@ -32,7 +32,7 @@ public:
     ~Cpu() = default;
 
     void reset();
-    [[nodiscard]] auto tick() -> uint8_t;
+    [[nodiscard]] uint8_t tick();
 
     [[nodiscard]] Registers get_registers() const {return registers_; };
 
