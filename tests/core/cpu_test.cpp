@@ -11,8 +11,44 @@ TEST(CpuTest, Reset) {
     EXPECT_EQ(registers.c, 0x00);
     EXPECT_EQ(registers.d, 0x00);
     EXPECT_EQ(registers.e, 0x00);
+    EXPECT_EQ(registers.f, 0x00);
     EXPECT_EQ(registers.h, 0x00);
     EXPECT_EQ(registers.l, 0x00);
     EXPECT_EQ(registers.sp, 0x0000);
     EXPECT_EQ(registers.pc, 0x0100);
+}
+
+TEST(CpuTest, RegisterPairs) {
+    Cpu cpu;
+    cpu.reset();
+
+    Cpu::Registers registers = cpu.get_registers();
+
+    registers.set_af(0x1234);
+    registers.set_bc(0x5678);
+    registers.set_de(0x9012);
+    registers.set_hl(0x3456);
+
+    EXPECT_EQ(registers.a, 0x12);
+    EXPECT_EQ(registers.b, 0x56);
+    EXPECT_EQ(registers.c, 0x78);
+    EXPECT_EQ(registers.d, 0x90);
+    EXPECT_EQ(registers.e, 0x12);
+    EXPECT_EQ(registers.f, 0x34);
+    EXPECT_EQ(registers.h, 0x34);
+    EXPECT_EQ(registers.l, 0x56);
+
+    registers.a = 0x01;
+    registers.b = 0x02;
+    registers.c = 0x03;
+    registers.d = 0x04;
+    registers.e = 0x05;
+    registers.f = 0x06;
+    registers.h = 0x07;
+    registers.l = 0x08;
+
+    EXPECT_EQ(registers.get_af(), 0x0106);
+    EXPECT_EQ(registers.get_bc(), 0x0203);
+    EXPECT_EQ(registers.get_de(), 0x0405);
+    EXPECT_EQ(registers.get_hl(), 0x0708);
 }

@@ -10,6 +10,7 @@ void Cpu::reset() {
     registers_.c = 0x00;
     registers_.d = 0x00;
     registers_.e = 0x00;
+    registers_.f = 0x00;
     registers_.h = 0x00;
     registers_.l = 0x00;
     registers_.sp = 0x0000;
