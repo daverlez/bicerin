@@ -75,6 +75,8 @@ private:
 
     template <uint8_t Cpu::Registers::*Reg> uint8_t inc_r8();
                                             uint8_t inc_hl();
+    template <uint8_t Cpu::Registers::*Reg> uint8_t dec_r8();
+                                            uint8_t dec_hl();
 
     /**************************
      * Block 1 (see Pan Docs) *
