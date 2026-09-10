@@ -183,3 +183,17 @@ TEST_F(CpuTest, Ld_r8_imm8) {
     EXPECT_EQ(mmu.read(0x0000), 0x99);
     EXPECT_EQ(cpu.get_registers().pc, 0x0104);
 }
+
+TEST_F(CpuTest, Ld_r16_imm16) {
+    mmu.write(cpu.get_registers().pc, 0x01);            // LD BC, 0x1234
+    mmu.write(cpu.get_registers().pc + 1, 0x34);
+    mmu.write(cpu.get_registers().pc + 2, 0x12);
+
+    uint8_t cycles = cpu.tick();
+    EXPECT_EQ(cycles, 3);
+    EXPECT_EQ(cpu.get_registers().pc, 0x0103);
+
+    EXPECT_EQ(cpu.get_registers().b, 0x12);
+    EXPECT_EQ(cpu.get_registers().c, 0x34);
+    EXPECT_EQ(cpu.get_registers().get_bc(), 0x1234);
+}
