@@ -167,3 +167,19 @@ TEST_F(CpuTest, Dec_r8_Dec_hl) {
     EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
     EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
 }
+
+TEST_F(CpuTest, Ld_r8_imm8) {
+    mmu.write(cpu.get_registers().pc, 0x06);            // LD B, imm8
+    mmu.write(cpu.get_registers().pc + 1, 0x42); // imm8 = 0x42
+    uint8_t cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(cpu.get_registers().b, 0x42);
+    EXPECT_EQ(cpu.get_registers().pc, 0x0102);
+
+    mmu.write(cpu.get_registers().pc, 0x36);            // LD [HL], imm8
+    mmu.write(cpu.get_registers().pc + 1, 0x99); // imm8 = 0x99
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 3);
+    EXPECT_EQ(mmu.read(0x0000), 0x99);
+    EXPECT_EQ(cpu.get_registers().pc, 0x0104);
+}
