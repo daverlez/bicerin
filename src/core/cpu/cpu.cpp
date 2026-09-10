@@ -71,6 +71,21 @@ uint8_t Cpu::ld_r8_r8() {
     return 1;
 }
 
+template<uint8_t Cpu::Registers::*Dst>
+uint8_t Cpu::ld_r8_hl() {
+    uint16_t address = registers_.get_hl();
+    uint8_t val = mmu_.read(address);
+    registers_.*Dst = val;
+    return 2;
+}
+
+template<uint8_t Cpu::Registers::*Src>
+uint8_t Cpu::ld_hl_r8() {
+    uint16_t address = registers_.get_hl();
+    mmu_.write(address, registers_.*Src);
+    return 2;
+}
+
 void Cpu::build_instruction_table() {
     instructions_.fill(&Cpu::unimplemented_instruction);
 
@@ -100,7 +115,7 @@ void Cpu::build_instruction_table() {
     instructions_[0x43] = &Cpu::ld_r8_r8<&Cpu::Registers::b, &Cpu::Registers::e>;
     instructions_[0x44] = &Cpu::ld_r8_r8<&Cpu::Registers::b, &Cpu::Registers::h>;
     instructions_[0x45] = &Cpu::ld_r8_r8<&Cpu::Registers::b, &Cpu::Registers::l>;
-    // 0x46: LD B, [HL]
+    instructions_[0x46] = &Cpu::ld_r8_hl<&Cpu::Registers::b>;
     instructions_[0x47] = &Cpu::ld_r8_r8<&Cpu::Registers::b, &Cpu::Registers::a>;
 
     // LD C, r
@@ -110,7 +125,7 @@ void Cpu::build_instruction_table() {
     instructions_[0x4B] = &Cpu::ld_r8_r8<&Cpu::Registers::c, &Cpu::Registers::e>;
     instructions_[0x4C] = &Cpu::ld_r8_r8<&Cpu::Registers::c, &Cpu::Registers::h>;
     instructions_[0x4D] = &Cpu::ld_r8_r8<&Cpu::Registers::c, &Cpu::Registers::l>;
-    // 0x4E: LD C, [HL]
+    instructions_[0x4E] = &Cpu::ld_r8_hl<&Cpu::Registers::c>;
     instructions_[0x4F] = &Cpu::ld_r8_r8<&Cpu::Registers::c, &Cpu::Registers::a>;
 
     // LD D, r
@@ -120,7 +135,7 @@ void Cpu::build_instruction_table() {
     instructions_[0x53] = &Cpu::ld_r8_r8<&Cpu::Registers::d, &Cpu::Registers::e>;
     instructions_[0x54] = &Cpu::ld_r8_r8<&Cpu::Registers::d, &Cpu::Registers::h>;
     instructions_[0x55] = &Cpu::ld_r8_r8<&Cpu::Registers::d, &Cpu::Registers::l>;
-    // 0x56: LD D, [HL]
+    instructions_[0x56] = &Cpu::ld_r8_hl<&Cpu::Registers::d>;
     instructions_[0x57] = &Cpu::ld_r8_r8<&Cpu::Registers::d, &Cpu::Registers::a>;
 
     // LD E, r
@@ -130,7 +145,7 @@ void Cpu::build_instruction_table() {
     instructions_[0x5B] = &Cpu::ld_r8_r8<&Cpu::Registers::e, &Cpu::Registers::e>;
     instructions_[0x5C] = &Cpu::ld_r8_r8<&Cpu::Registers::e, &Cpu::Registers::h>;
     instructions_[0x5D] = &Cpu::ld_r8_r8<&Cpu::Registers::e, &Cpu::Registers::l>;
-    // 0x5E: LD E, [HL]
+    instructions_[0x5E] = &Cpu::ld_r8_hl<&Cpu::Registers::e>;
     instructions_[0x5F] = &Cpu::ld_r8_r8<&Cpu::Registers::e, &Cpu::Registers::a>;
 
     // LD H, r
@@ -140,7 +155,7 @@ void Cpu::build_instruction_table() {
     instructions_[0x63] = &Cpu::ld_r8_r8<&Cpu::Registers::h, &Cpu::Registers::e>;
     instructions_[0x64] = &Cpu::ld_r8_r8<&Cpu::Registers::h, &Cpu::Registers::h>;
     instructions_[0x65] = &Cpu::ld_r8_r8<&Cpu::Registers::h, &Cpu::Registers::l>;
-    // 0x66: LD H, [HL]
+    instructions_[0x66] = &Cpu::ld_r8_hl<&Cpu::Registers::h>;
     instructions_[0x67] = &Cpu::ld_r8_r8<&Cpu::Registers::h, &Cpu::Registers::a>;
 
     // LD L, r
@@ -150,10 +165,18 @@ void Cpu::build_instruction_table() {
     instructions_[0x6B] = &Cpu::ld_r8_r8<&Cpu::Registers::l, &Cpu::Registers::e>;
     instructions_[0x6C] = &Cpu::ld_r8_r8<&Cpu::Registers::l, &Cpu::Registers::h>;
     instructions_[0x6D] = &Cpu::ld_r8_r8<&Cpu::Registers::l, &Cpu::Registers::l>;
-    // 0x6E: LD L, [HL]
+    instructions_[0x6E] = &Cpu::ld_r8_hl<&Cpu::Registers::l>;
     instructions_[0x6F] = &Cpu::ld_r8_r8<&Cpu::Registers::l, &Cpu::Registers::a>;
 
-    // 0x70 - 0x77: LD [HL], r and HALT (0x76).
+    // LD [HL], r and HALT (0x76).
+    instructions_[0x70] = &Cpu::ld_hl_r8<&Cpu::Registers::b>;
+    instructions_[0x71] = &Cpu::ld_hl_r8<&Cpu::Registers::c>;
+    instructions_[0x72] = &Cpu::ld_hl_r8<&Cpu::Registers::d>;
+    instructions_[0x73] = &Cpu::ld_hl_r8<&Cpu::Registers::e>;
+    instructions_[0x74] = &Cpu::ld_hl_r8<&Cpu::Registers::h>;
+    instructions_[0x75] = &Cpu::ld_hl_r8<&Cpu::Registers::l>;
+    // TODO 0x76: HALT
+    instructions_[0x77] = &Cpu::ld_hl_r8<&Cpu::Registers::a>;
 
     // LD A, r
     instructions_[0x78] = &Cpu::ld_r8_r8<&Cpu::Registers::a, &Cpu::Registers::b>;
@@ -162,6 +185,6 @@ void Cpu::build_instruction_table() {
     instructions_[0x7B] = &Cpu::ld_r8_r8<&Cpu::Registers::a, &Cpu::Registers::e>;
     instructions_[0x7C] = &Cpu::ld_r8_r8<&Cpu::Registers::a, &Cpu::Registers::h>;
     instructions_[0x7D] = &Cpu::ld_r8_r8<&Cpu::Registers::a, &Cpu::Registers::l>;
-    // 0x7E: LD A, [HL]
+    instructions_[0x7E] = &Cpu::ld_r8_hl<&Cpu::Registers::a>;
     instructions_[0x7F] = &Cpu::ld_r8_r8<&Cpu::Registers::a, &Cpu::Registers::a>;
 }

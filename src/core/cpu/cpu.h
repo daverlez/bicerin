@@ -81,6 +81,8 @@ private:
      **************************/
     template <uint8_t Cpu::Registers::*Dst,
               uint8_t Cpu::Registers::*Src> uint8_t ld_r8_r8();
+    template <uint8_t Cpu::Registers::*Dst> uint8_t ld_r8_hl();
+    template <uint8_t Cpu::Registers::*Src> uint8_t ld_hl_r8();
 };
 
 
