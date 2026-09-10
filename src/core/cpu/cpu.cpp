@@ -100,6 +100,20 @@ uint8_t Cpu::ld_imm16_sp() {
     return 5;
 }
 
+template <uint16_t (Cpu::Registers::*Getter)() const, void (Cpu::Registers::*Setter)(uint16_t)>
+uint8_t Cpu::inc_r16() {
+    uint16_t val = (registers_.*Getter)();
+    (registers_.*Setter)(val + 1);
+    return 2;
+}
+
+template <uint16_t (Cpu::Registers::*Getter)() const, void (Cpu::Registers::*Setter)(uint16_t)>
+uint8_t Cpu::dec_r16() {
+    uint16_t val = (registers_.*Getter)();
+    (registers_.*Setter)(val - 1);
+    return 2;
+}
+
 template <uint8_t Cpu::Registers::*Reg>
 uint8_t Cpu::inc_r8() {
     bool half_carry = (registers_.*Reg & 0x0F) == 0x0F;
@@ -218,6 +232,16 @@ void Cpu::build_instruction_table() {
     instructions_[0x3A] = &Cpu::ld_a_hld;
 
     instructions_[0x08] = &Cpu::ld_imm16_sp;
+
+    instructions_[0x03] = &Cpu::inc_r16<&Cpu::Registers::get_bc, &Cpu::Registers::set_bc>;
+    instructions_[0x13] = &Cpu::inc_r16<&Cpu::Registers::get_de, &Cpu::Registers::set_de>;
+    instructions_[0x23] = &Cpu::inc_r16<&Cpu::Registers::get_hl, &Cpu::Registers::set_hl>;
+    instructions_[0x33] = &Cpu::inc_r16<&Cpu::Registers::get_sp, &Cpu::Registers::set_sp>;
+
+    instructions_[0x0B] = &Cpu::dec_r16<&Cpu::Registers::get_bc, &Cpu::Registers::set_bc>;
+    instructions_[0x1B] = &Cpu::dec_r16<&Cpu::Registers::get_de, &Cpu::Registers::set_de>;
+    instructions_[0x2B] = &Cpu::dec_r16<&Cpu::Registers::get_hl, &Cpu::Registers::set_hl>;
+    instructions_[0x3B] = &Cpu::dec_r16<&Cpu::Registers::get_sp, &Cpu::Registers::set_sp>;
 
     instructions_[0x04] = &Cpu::inc_r8<&Cpu::Registers::b>;
     instructions_[0x0C] = &Cpu::inc_r8<&Cpu::Registers::c>;

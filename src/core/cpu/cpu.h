@@ -24,6 +24,7 @@ public:
         [[nodiscard]] uint16_t get_bc() const { return (b << 8) | c; }
         [[nodiscard]] uint16_t get_de() const { return (d << 8) | e; }
         [[nodiscard]] uint16_t get_hl() const { return (h << 8) | l; }
+        [[nodiscard]] uint16_t get_sp() const { return sp; }
 
         void set_af(uint16_t val) { a = (val & 0xFF00) >> 8; f = (val & 0x00FF); }
         void set_bc(uint16_t val) { b = (val & 0xFF00) >> 8; c = (val & 0x00FF); }
@@ -80,13 +81,19 @@ private:
                                             uint8_t ld_r16_imm16();
     template <uint16_t (Cpu::Registers::*Getter)() const>
                                             uint8_t ld_r16mem_a();
-    uint8_t                                 ld_hli_a();
-    uint8_t                                 ld_hld_a();
+                                            uint8_t ld_hli_a();
+                                            uint8_t ld_hld_a();
     template <uint16_t (Cpu::Registers::*Getter)() const>
                                             uint8_t ld_a_r16mem();
-    uint8_t                                 ld_a_hli();
-    uint8_t                                 ld_a_hld();
-    uint8_t                                 ld_imm16_sp();
+                                            uint8_t ld_a_hli();
+                                            uint8_t ld_a_hld();
+                                            uint8_t ld_imm16_sp();
+    template <uint16_t (Cpu::Registers::*Getter)() const,
+              void (Cpu::Registers::*Setter)(uint16_t)>
+                                            uint8_t inc_r16();
+    template <uint16_t (Cpu::Registers::*Getter)() const,
+              void (Cpu::Registers::*Setter)(uint16_t)>
+                                            uint8_t dec_r16();
     template <uint8_t Cpu::Registers::*Reg> uint8_t inc_r8();
                                             uint8_t inc_hl();
     template <uint8_t Cpu::Registers::*Reg> uint8_t dec_r8();
