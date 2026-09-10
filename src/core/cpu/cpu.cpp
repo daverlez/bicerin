@@ -95,7 +95,7 @@ uint8_t Cpu::ld_imm16_sp() {
     uint8_t msb = mmu_.read(registers_.pc); registers_.pc++;
     uint16_t imm16 = (msb << 8) | lsb;
 
-    mmu_.write(imm16, registers_.sp & 0xFF);
+    mmu_.write(imm16, registers_.sp & 0x00FF);
     mmu_.write(imm16 + 1, registers_.sp >> 8);
     return 5;
 }

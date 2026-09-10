@@ -303,3 +303,27 @@ TEST_F(CpuTest, Ld_a_r16mem) {
     EXPECT_EQ(cpu.get_registers().a, 0x44);
     EXPECT_EQ(cpu.get_registers().get_hl(), 0x8000);
 }
+
+TEST_F(CpuTest, Ld_imm16_sp) {
+    uint16_t pc = cpu.get_registers().pc;
+
+    // LD SP, 0xAABB
+    mmu.write(pc, 0x31);
+    mmu.write(pc + 1, 0xBB);
+    mmu.write(pc + 2, 0xAA);
+    cpu.tick();
+    EXPECT_EQ(cpu.get_registers().sp, 0xAABB);
+
+    pc = cpu.get_registers().pc;
+
+    // LD 0xC000, SP
+    mmu.write(pc, 0x08);
+    mmu.write(pc + 1, 0x00);
+    mmu.write(pc + 2, 0xC0);
+
+    uint8_t cycles = cpu.tick();
+    EXPECT_EQ(cycles, 5);
+    EXPECT_EQ(cpu.get_registers().pc, pc + 3);
+    EXPECT_EQ(mmu.read(0xC000), 0xBB);
+    EXPECT_EQ(mmu.read(0xC001), 0xAA);
+}
