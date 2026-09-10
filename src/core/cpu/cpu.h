@@ -43,13 +43,17 @@ public:
             else
                 f &= ~flag;
         }
+
+        bool get_flag(Flag flag) {
+            return f & flag;
+        }
     };
 
     Cpu(Mmu& mmu);
     ~Cpu() = default;
 
     void reset();
-    [[nodiscard]] uint8_t tick();
+    uint8_t tick();
 
     [[nodiscard]] Registers get_registers() const {return registers_; };
 

@@ -55,3 +55,44 @@ TEST(CpuTest, RegisterPairs) {
     EXPECT_EQ(registers.get_de(), 0x0405);
     EXPECT_EQ(registers.get_hl(), 0x0708);
 }
+
+TEST(CpuTest, Inc_r8_Inc_hl) {
+    Mmu mmu;
+    Cpu cpu(mmu);
+    cpu.reset();
+
+    mmu.write(cpu.get_registers().pc, 0x04);
+    uint8_t cycles = cpu.tick();
+
+    EXPECT_EQ(cycles, 1);
+    EXPECT_EQ(cpu.get_registers().b, 0x01);
+    EXPECT_EQ(cpu.get_registers().pc, 0x0101);
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::Z));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
+
+    for (int i = 0; i < 14; ++i) {
+        mmu.write(cpu.get_registers().pc, 0x04);
+        cpu.tick();
+    }
+    EXPECT_EQ(cpu.get_registers().b, 0x0F);
+
+    mmu.write(cpu.get_registers().pc, 0x04);
+    cpu.tick();
+
+    EXPECT_EQ(cpu.get_registers().b, 0x10);
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
+
+    mmu.write(0x0000, 0xFF);
+    mmu.write(cpu.get_registers().pc, 0x34);
+
+    cycles = cpu.tick();
+
+    EXPECT_EQ(cycles, 3);
+    EXPECT_EQ(mmu.read(0x0000), 0x00);
+
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::Z));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
+}
