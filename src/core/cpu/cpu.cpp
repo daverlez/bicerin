@@ -48,6 +48,27 @@ uint8_t Cpu::ld_r16_imm16() {
     return 3;
 }
 
+template <uint16_t (Cpu::Registers::*Getter)() const>
+uint8_t Cpu::ld_r16mem_a() {
+    uint16_t address = (registers_.*Getter)();
+    mmu_.write(address, registers_.a);
+    return 2;
+}
+
+uint8_t Cpu::ld_hli_a() {
+    uint16_t hl = registers_.get_hl();
+    mmu_.write(hl, registers_.a);
+    registers_.set_hl(hl + 1);
+    return 2;
+}
+
+uint8_t Cpu::ld_hld_a() {
+    uint16_t hl = registers_.get_hl();
+    mmu_.write(hl, registers_.a);
+    registers_.set_hl(hl - 1);
+    return 2;
+}
+
 template <uint8_t Cpu::Registers::*Reg>
 uint8_t Cpu::inc_r8() {
     bool half_carry = (registers_.*Reg & 0x0F) == 0x0F;
@@ -154,6 +175,11 @@ void Cpu::build_instruction_table() {
     instructions_[0x11] = &Cpu::ld_r16_imm16<&Cpu::Registers::set_de>;
     instructions_[0x21] = &Cpu::ld_r16_imm16<&Cpu::Registers::set_hl>;
     instructions_[0x31] = &Cpu::ld_r16_imm16<&Cpu::Registers::set_sp>;
+
+    instructions_[0x02] = &Cpu::ld_r16mem_a<&Cpu::Registers::get_bc>;
+    instructions_[0x12] = &Cpu::ld_r16mem_a<&Cpu::Registers::get_de>;
+    instructions_[0x22] = &Cpu::ld_hli_a;
+    instructions_[0x32] = &Cpu::ld_hld_a;
 
     instructions_[0x04] = &Cpu::inc_r8<&Cpu::Registers::b>;
     instructions_[0x0C] = &Cpu::inc_r8<&Cpu::Registers::c>;
