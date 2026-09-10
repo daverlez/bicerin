@@ -37,15 +37,15 @@ public:
             C = 1 << 4
         };
 
+        bool get_flag(Flag flag) {
+            return f & flag;
+        }
+
         void set_flag(Flag flag, bool value) {
             if (value)
                 f |= flag;
             else
                 f &= ~flag;
-        }
-
-        bool get_flag(Flag flag) {
-            return f & flag;
         }
     };
 
@@ -69,9 +69,18 @@ private:
 
     uint8_t nop();
 
-    template <uint8_t Cpu::Registers::*Reg>
-    uint8_t inc_r8();
-    uint8_t inc_hl();
+    /**************************
+     * Block 0 (see Pan Docs) *
+     **************************/
+
+    template <uint8_t Cpu::Registers::*Reg> uint8_t inc_r8();
+                                            uint8_t inc_hl();
+
+    /**************************
+     * Block 1 (see Pan Docs) *
+     **************************/
+    template <uint8_t Cpu::Registers::*Dst,
+              uint8_t Cpu::Registers::*Src> uint8_t ld_r8_r8();
 };
 
 

@@ -2,7 +2,16 @@
 #include <cpu/cpu.h>
 #include <mmu/mmu.h>
 
-TEST(CpuTest, Reset) {
+class CpuTest : public ::testing::Test {
+protected:
+    Mmu mmu;
+    Cpu cpu;
+
+    CpuTest() : cpu(mmu) {}
+    void SetUp() override { cpu.reset(); }
+};
+
+TEST_F(CpuTest, Reset) {
     Mmu mmu;
     Cpu cpu(mmu);
     cpu.reset();
@@ -20,7 +29,7 @@ TEST(CpuTest, Reset) {
     EXPECT_EQ(registers.pc, 0x0100);
 }
 
-TEST(CpuTest, RegisterPairs) {
+TEST_F(CpuTest, RegisterPairs) {
     Mmu mmu;
     Cpu cpu(mmu);
     cpu.reset();
@@ -56,12 +65,12 @@ TEST(CpuTest, RegisterPairs) {
     EXPECT_EQ(registers.get_hl(), 0x0708);
 }
 
-TEST(CpuTest, Inc_r8_Inc_hl) {
+TEST_F(CpuTest, Inc_r8_Inc_hl) {
     Mmu mmu;
     Cpu cpu(mmu);
     cpu.reset();
 
-    mmu.write(cpu.get_registers().pc, 0x04);
+    mmu.write(cpu.get_registers().pc, 0x04);        // INC B
     uint8_t cycles = cpu.tick();
 
     EXPECT_EQ(cycles, 1);
@@ -72,7 +81,7 @@ TEST(CpuTest, Inc_r8_Inc_hl) {
     EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
 
     for (int i = 0; i < 14; ++i) {
-        mmu.write(cpu.get_registers().pc, 0x04);
+        mmu.write(cpu.get_registers().pc, 0x04);    // INC B
         cpu.tick();
     }
     EXPECT_EQ(cpu.get_registers().b, 0x0F);
@@ -85,7 +94,7 @@ TEST(CpuTest, Inc_r8_Inc_hl) {
     EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
 
     mmu.write(0x0000, 0xFF);
-    mmu.write(cpu.get_registers().pc, 0x34);
+    mmu.write(cpu.get_registers().pc, 0x34);        // INC [HL]
 
     cycles = cpu.tick();
 
