@@ -327,3 +327,35 @@ TEST_F(CpuTest, Ld_imm16_sp) {
     EXPECT_EQ(mmu.read(0xC000), 0xBB);
     EXPECT_EQ(mmu.read(0xC001), 0xAA);
 }
+
+TEST_F(CpuTest, Inc_r16) {
+    uint16_t start_pc = cpu.get_registers().pc;
+
+    std::vector<uint8_t> program = {
+        0x01, 0xFF, 0x00, // LD BC, 0x00FF
+        0x03              // INC BC
+    };
+    for (size_t i = 0; i < program.size(); ++i) mmu.write(start_pc + i, program[i]);
+
+    cpu.tick();
+    uint8_t cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(cpu.get_registers().get_bc(), 0x0100);
+    EXPECT_EQ(cpu.get_registers().f, 0x00);
+}
+
+TEST_F(CpuTest, Dec_r16) {
+    uint16_t start_pc = cpu.get_registers().pc;
+
+    std::vector<uint8_t> program = {
+        0x11, 0x00, 0x01, // LD DE, 0x0100
+        0x1B              // DEC DE
+    };
+    for (size_t i = 0; i < program.size(); ++i) mmu.write(start_pc + i, program[i]);
+
+    cpu.tick();
+    uint8_t cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(cpu.get_registers().get_de(), 0x00FF);
+    EXPECT_EQ(cpu.get_registers().f, 0x00);
+}
