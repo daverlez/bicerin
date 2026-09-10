@@ -197,3 +197,59 @@ TEST_F(CpuTest, Ld_r16_imm16) {
     EXPECT_EQ(cpu.get_registers().c, 0x34);
     EXPECT_EQ(cpu.get_registers().get_bc(), 0x1234);
 }
+
+TEST_F(CpuTest, Ld_r16mem_a) {
+    uint16_t start_pc = cpu.get_registers().pc;
+
+    std::vector<uint8_t> program = {
+        // Test 1: LD [BC], A
+        0x3E, 0x42,       // LD A, 0x42
+        0x01, 0x00, 0xC0, // LD BC, 0xC000
+        0x02,             // LD [BC], A
+
+        // Test 2: LD [DE], A
+        0x3E, 0x99,       // LD A, 0x99
+        0x11, 0x00, 0xD0, // LD DE, 0xD000
+        0x12,             // LD [DE], A
+
+        0x3E, 0xAA,       // LD A, 0xAA
+        0x21, 0x00, 0x80, // LD HL, 0x8000
+        0x22,             // LD [HL+], A
+
+        // Test 4: LD [HL-], A
+        0x3E, 0xBB,       // LD A, 0xBB
+        0x32              // LD [HL-], A
+    };
+
+    for (size_t i = 0; i < program.size(); ++i) mmu.write(start_pc + i, program[i]);
+
+
+    // Test 1: LD [BC], A
+    cpu.tick();
+    cpu.tick();
+    uint8_t cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(mmu.read(0xC000), 0x42);
+
+    // Test 2: LD [DE], A
+    cpu.tick();
+    cpu.tick();
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(mmu.read(0xD000), 0x99);
+
+    // Test 3: LD [HL+], A
+    cpu.tick();
+    cpu.tick();
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(mmu.read(0x8000), 0xAA);
+    EXPECT_EQ(cpu.get_registers().get_hl(), 0x8001);
+
+    // Test 4: LD [HL-], A
+    cpu.tick();
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(mmu.read(0x8001), 0xBB);
+    EXPECT_EQ(cpu.get_registers().get_hl(), 0x8000);
+}
