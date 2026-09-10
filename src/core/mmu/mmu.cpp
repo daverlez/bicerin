@@ -17,6 +17,12 @@ uint8_t Mmu::read(uint16_t address) const {
 }
 
 void Mmu::write(uint16_t address, uint8_t data) {
+    if (address >= 0xE000 && address <= 0xFDFF) {
+        // Echo RAM
+        memory_[address - 0x2000] = data;
+        return;
+    }
+
     // TODO: map memory segments to dedicated logic
     memory_[address] = data;
 }

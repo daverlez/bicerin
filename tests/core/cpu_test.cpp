@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 #include <cpu/cpu.h>
+#include <mmu/mmu.h>
 
 TEST(CpuTest, Reset) {
-    Cpu cpu;
+    Mmu mmu;
+    Cpu cpu(mmu);
     cpu.reset();
 
     Cpu::Registers registers = cpu.get_registers();
@@ -19,7 +21,8 @@ TEST(CpuTest, Reset) {
 }
 
 TEST(CpuTest, RegisterPairs) {
-    Cpu cpu;
+    Mmu mmu;
+    Cpu cpu(mmu);
     cpu.reset();
 
     Cpu::Registers registers = cpu.get_registers();

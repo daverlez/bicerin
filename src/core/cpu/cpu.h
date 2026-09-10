@@ -1,7 +1,10 @@
 #pragma once
 #include <cstdint>
+#include <array>
+#include <stdexcept>
+#include <iostream>
 
-class MMU;
+#include <mmu/mmu.h>
 
 class Cpu {
 public:
@@ -26,9 +29,23 @@ public:
         void set_bc(uint16_t val) { b = (val & 0xFF00) >> 8; c = (val & 0x00FF); }
         void set_de(uint16_t val) { d = (val & 0xFF00) >> 8; e = (val & 0x00FF); }
         void set_hl(uint16_t val) { h = (val & 0xFF00) >> 8; l = (val & 0x00FF); }
+
+        enum Flag : uint8_t {
+            Z = 1 << 7,
+            N = 1 << 6,
+            H = 1 << 5,
+            C = 1 << 4
+        };
+
+        void set_flag(Flag flag, bool value) {
+            if (value)
+                f |= flag;
+            else
+                f &= ~flag;
+        }
     };
 
-    Cpu();
+    Cpu(Mmu& mmu);
     ~Cpu() = default;
 
     void reset();
@@ -38,7 +55,19 @@ public:
 
 private:
     Registers registers_;
-    //MMU& mmu_;
+    Mmu& mmu_;
+
+    using InstructionHandler = uint8_t (Cpu::*)();
+    std::array<InstructionHandler, 256> instructions_;
+
+    uint8_t unimplemented_instruction();
+    void build_instruction_table();
+
+    uint8_t nop();
+
+    template <uint8_t Cpu::Registers::*Reg>
+    uint8_t inc_r8();
+    uint8_t inc_hl();
 };
 
 
