@@ -92,6 +92,24 @@ uint8_t Cpu::dec_hl() {
     return 3;
 }
 
+template<uint8_t Cpu::Registers::*Reg>
+uint8_t Cpu::ld_r8_imm8() {
+    uint8_t imm8 = mmu_.read(registers_.pc);
+    registers_.pc++;
+    registers_.*Reg = imm8;
+
+    return 2;
+}
+
+uint8_t Cpu::ld_hl_imm8() {
+    uint8_t imm8 = mmu_.read(registers_.pc);
+    registers_.pc++;
+    uint16_t address = registers_.get_hl();
+    mmu_.write(address, imm8);
+
+    return 3;
+}
+
 template <uint8_t Cpu::Registers::*Dst, uint8_t Cpu::Registers::*Src>
 uint8_t Cpu::ld_r8_r8() {
     registers_.*Dst = registers_.*Src;
@@ -139,6 +157,15 @@ void Cpu::build_instruction_table() {
     instructions_[0x2D] = &Cpu::dec_r8<&Cpu::Registers::l>;
     instructions_[0x35] = &Cpu::dec_hl;
     instructions_[0x3D] = &Cpu::dec_r8<&Cpu::Registers::a>;
+
+    instructions_[0x06] = &Cpu::ld_r8_imm8<&Cpu::Registers::b>;
+    instructions_[0x0E] = &Cpu::ld_r8_imm8<&Cpu::Registers::c>;
+    instructions_[0x16] = &Cpu::ld_r8_imm8<&Cpu::Registers::d>;
+    instructions_[0x1E] = &Cpu::ld_r8_imm8<&Cpu::Registers::e>;
+    instructions_[0x26] = &Cpu::ld_r8_imm8<&Cpu::Registers::h>;
+    instructions_[0x2E] = &Cpu::ld_r8_imm8<&Cpu::Registers::l>;
+    instructions_[0x36] = &Cpu::ld_hl_imm8;
+    instructions_[0x3E] = &Cpu::ld_r8_imm8<&Cpu::Registers::a>;
 
     /***********
      * Block 0 *
