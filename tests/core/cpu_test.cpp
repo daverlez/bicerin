@@ -105,3 +105,39 @@ TEST_F(CpuTest, Inc_r8_Inc_hl) {
     EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
     EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
 }
+
+TEST_F(CpuTest, Ld_r8_r8) {
+    mmu.write(cpu.get_registers().pc, 0x0C);    // INC C
+    cpu.tick();
+    EXPECT_EQ(cpu.get_registers().c, 0x01);
+
+    mmu.write(cpu.get_registers().pc, 0x41);    // LD B, C
+    uint8_t cycles = cpu.tick();
+
+    EXPECT_EQ(cycles, 1);
+    EXPECT_EQ(cpu.get_registers().b, 0x01);
+}
+
+TEST_F(CpuTest, Ld_r8_hl) {
+    mmu.write(0x0000, 0xAA);            // Writing 0xAA in address pointed by [HL]
+
+    mmu.write(cpu.get_registers().pc, 0x46);   // LD B, [HL]
+    uint8_t cycles = cpu.tick();
+
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(cpu.get_registers().b, 0xAA);
+}
+
+TEST_F(CpuTest, Ld_hl_r8) {
+    mmu.write(cpu.get_registers().pc, 0x04);    // INC B
+    cpu.tick();
+    mmu.write(cpu.get_registers().pc, 0x04);    // INC B
+    cpu.tick();
+    EXPECT_EQ(cpu.get_registers().b, 0x02);
+
+    mmu.write(cpu.get_registers().pc, 0x70);    // LD [HL], B
+    uint8_t cycles = cpu.tick();
+
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(mmu.read(0x0000), 0x02);
+}
