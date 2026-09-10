@@ -90,6 +90,16 @@ uint8_t Cpu::ld_a_hld() {
     return 2;
 }
 
+uint8_t Cpu::ld_imm16_sp() {
+    uint8_t lsb = mmu_.read(registers_.pc); registers_.pc++;
+    uint8_t msb = mmu_.read(registers_.pc); registers_.pc++;
+    uint16_t imm16 = (msb << 8) | lsb;
+
+    mmu_.write(imm16, registers_.sp & 0xFF);
+    mmu_.write(imm16 + 1, registers_.sp >> 8);
+    return 5;
+}
+
 template <uint8_t Cpu::Registers::*Reg>
 uint8_t Cpu::inc_r8() {
     bool half_carry = (registers_.*Reg & 0x0F) == 0x0F;
@@ -206,6 +216,8 @@ void Cpu::build_instruction_table() {
     instructions_[0x1A] = &Cpu::ld_a_r16mem<&Cpu::Registers::get_de>;
     instructions_[0x2A] = &Cpu::ld_a_hli;
     instructions_[0x3A] = &Cpu::ld_a_hld;
+
+    instructions_[0x08] = &Cpu::ld_imm16_sp;
 
     instructions_[0x04] = &Cpu::inc_r8<&Cpu::Registers::b>;
     instructions_[0x0C] = &Cpu::inc_r8<&Cpu::Registers::c>;
