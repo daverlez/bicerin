@@ -94,6 +94,8 @@ private:
     template <uint16_t (Cpu::Registers::*Getter)() const,
               void (Cpu::Registers::*Setter)(uint16_t)>
                                             uint8_t dec_r16();
+    template <uint16_t (Cpu::Registers::*Getter)() const>
+                                            uint8_t add_hl_r16();
     template <uint8_t Cpu::Registers::*Reg> uint8_t inc_r8();
                                             uint8_t inc_hl();
     template <uint8_t Cpu::Registers::*Reg> uint8_t dec_r8();
