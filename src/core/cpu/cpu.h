@@ -39,8 +39,8 @@ public:
             C = 1 << 4
         };
 
-        bool get_flag(Flag flag) {
-            return f & flag;
+        bool get_flag(Flag flag) const {
+            return (f & flag) != 0;
         }
 
         void set_flag(Flag flag, bool value) {
@@ -102,6 +102,9 @@ private:
                                             uint8_t dec_hl();
     template <uint8_t Cpu::Registers::*Reg> uint8_t ld_r8_imm8();
                                             uint8_t ld_hl_imm8();
+                                            uint8_t jr_imm8();
+    template <Cpu::Registers::Flag Flag, bool ExpectedState>
+                                            uint8_t jr_cond_imm8();
 
     /**************************
      * Block 1 (see Pan Docs) *

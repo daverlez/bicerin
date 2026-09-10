@@ -200,6 +200,26 @@ uint8_t Cpu::ld_hl_imm8() {
     return 3;
 }
 
+uint8_t Cpu::jr_imm8() {
+    int8_t offset = static_cast<int8_t>(mmu_.read(registers_.pc));
+    registers_.pc++;
+    registers_.pc += offset;
+    return 3;
+}
+
+template <Cpu::Registers::Flag Flag, bool ExpectedState>
+uint8_t Cpu::jr_cond_imm8() {
+    int8_t offset = static_cast<int8_t>(mmu_.read(registers_.pc));
+    registers_.pc++;
+
+    if (registers_.get_flag(Flag) == ExpectedState) {
+        registers_.pc += offset;
+        return 3;
+    }
+
+    return 2;
+}
+
 template <uint8_t Cpu::Registers::*Dst, uint8_t Cpu::Registers::*Src>
 uint8_t Cpu::ld_r8_r8() {
     registers_.*Dst = registers_.*Src;
@@ -288,6 +308,13 @@ void Cpu::build_instruction_table() {
     instructions_[0x2E] = &Cpu::ld_r8_imm8<&Cpu::Registers::l>;
     instructions_[0x36] = &Cpu::ld_hl_imm8;
     instructions_[0x3E] = &Cpu::ld_r8_imm8<&Cpu::Registers::a>;
+
+    instructions_[0x18] = &Cpu::jr_imm8;
+
+    instructions_[0x20] = &Cpu::jr_cond_imm8<Cpu::Registers::Flag::Z, false>;
+    instructions_[0x28] = &Cpu::jr_cond_imm8<Cpu::Registers::Flag::Z, true>;
+    instructions_[0x30] = &Cpu::jr_cond_imm8<Cpu::Registers::Flag::C, false>;
+    instructions_[0x38] = &Cpu::jr_cond_imm8<Cpu::Registers::Flag::C, true>;
 
     /***********
      * Block 0 *
