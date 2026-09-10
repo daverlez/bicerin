@@ -220,9 +220,7 @@ TEST_F(CpuTest, Ld_r16mem_a) {
         0x3E, 0xBB,       // LD A, 0xBB
         0x32              // LD [HL-], A
     };
-
     for (size_t i = 0; i < program.size(); ++i) mmu.write(start_pc + i, program[i]);
-
 
     // Test 1: LD [BC], A
     cpu.tick();
@@ -251,5 +249,57 @@ TEST_F(CpuTest, Ld_r16mem_a) {
     cycles = cpu.tick();
     EXPECT_EQ(cycles, 2);
     EXPECT_EQ(mmu.read(0x8001), 0xBB);
+    EXPECT_EQ(cpu.get_registers().get_hl(), 0x8000);
+}
+
+TEST_F(CpuTest, Ld_a_r16mem) {
+    uint16_t start_pc = cpu.get_registers().pc;
+
+    mmu.write(0xC000, 0x11); // [BC]
+    mmu.write(0xD000, 0x22); // [DE]
+    mmu.write(0x8000, 0x33); // [HL+]
+    mmu.write(0x8001, 0x44); // [HL-]
+
+    std::vector<uint8_t> program = {
+        // Test 1: LD A, [BC]
+        0x01, 0x00, 0xC0, // LD BC, 0xC000
+        0x0A,             // LD A, [BC]
+
+        // Test 2: LD A, [DE]
+        0x11, 0x00, 0xD0, // LD DE, 0xD000
+        0x1A,             // LD A, [DE]
+
+        // Test 3: LD A, [HL+]
+        0x21, 0x00, 0x80, // LD HL, 0x8000
+        0x2A,             // LD A, [HL+]
+
+        // Test 4: LD A, [HL-]
+        0x3A              // LD A, [HL-]
+    };
+    for (size_t i = 0; i < program.size(); ++i) mmu.write(start_pc + i, program[i]);
+
+    // Test 1: LD A, [BC]
+    cpu.tick();
+    uint8_t cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(cpu.get_registers().a, 0x11);
+
+    // Test 2: LD A, [DE]
+    cpu.tick();
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(cpu.get_registers().a, 0x22);
+
+    // Test 3: LD A, [HL+]
+    cpu.tick();
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(cpu.get_registers().a, 0x33);
+    EXPECT_EQ(cpu.get_registers().get_hl(), 0x8001);
+
+    // Test 4: LD A, [HL-]
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(cpu.get_registers().a, 0x44);
     EXPECT_EQ(cpu.get_registers().get_hl(), 0x8000);
 }
