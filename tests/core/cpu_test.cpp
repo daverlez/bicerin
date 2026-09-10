@@ -411,3 +411,41 @@ TEST_F(CpuTest, Add_hl_r16) {
     EXPECT_FALSE(cpu.get_registers().f & Cpu::Registers::Flag::H);
     EXPECT_TRUE(cpu.get_registers().f & Cpu::Registers::Flag::C);
 }
+
+TEST_F(CpuTest, Jr_imm8) {
+    uint16_t pc = cpu.get_registers().pc;
+
+    // JR +5
+    mmu.write(pc, 0x18);
+    mmu.write(pc + 1, 0x05);
+    uint8_t cycles = cpu.tick();
+    EXPECT_EQ(cycles, 3);
+    EXPECT_EQ(cpu.get_registers().pc, 0x0107);
+
+    // JR -6
+    pc = cpu.get_registers().pc;
+    mmu.write(pc, 0x18);
+    mmu.write(pc + 1, 0xFA);
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 3);
+    EXPECT_EQ(cpu.get_registers().pc, 0x0103);
+}
+
+TEST_F(CpuTest, Jr_cond_imm8) {
+    uint16_t pc = cpu.get_registers().pc;
+
+    // JR NZ, +4
+    mmu.write(pc, 0x20);
+    mmu.write(pc + 1, 0x04);
+    uint8_t cycles = cpu.tick();
+    EXPECT_EQ(cycles, 3);
+    EXPECT_EQ(cpu.get_registers().pc, 0x0106);
+
+    // JR Z, +50
+    pc = cpu.get_registers().pc;
+    mmu.write(pc, 0x28);
+    mmu.write(pc + 1, 0x50);
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(cpu.get_registers().pc, 0x0108);
+}
