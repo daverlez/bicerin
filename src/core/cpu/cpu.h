@@ -82,6 +82,10 @@ private:
                                             uint8_t ld_r16mem_a();
     uint8_t                                 ld_hli_a();
     uint8_t                                 ld_hld_a();
+    template <uint16_t (Cpu::Registers::*Getter)() const>
+                                            uint8_t ld_a_r16mem();
+    uint8_t                                 ld_a_hli();
+    uint8_t                                 ld_a_hld();
     template <uint8_t Cpu::Registers::*Reg> uint8_t inc_r8();
                                             uint8_t inc_hl();
     template <uint8_t Cpu::Registers::*Reg> uint8_t dec_r8();
