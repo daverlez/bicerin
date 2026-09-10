@@ -141,3 +141,29 @@ TEST_F(CpuTest, Ld_hl_r8) {
     EXPECT_EQ(cycles, 2);
     EXPECT_EQ(mmu.read(0x0000), 0x02);
 }
+
+TEST_F(CpuTest, Dec_r8_Dec_hl) {
+    for(int i=0; i<16; ++i) {
+        mmu.write(cpu.get_registers().pc, 0x04);    // INC B
+        cpu.tick();
+    }
+    EXPECT_EQ(cpu.get_registers().b, 0x10);
+
+    mmu.write(cpu.get_registers().pc, 0x05);        // DEC B
+    uint8_t cycles = cpu.tick();
+    EXPECT_EQ(cycles, 1);
+    EXPECT_EQ(cpu.get_registers().b, 0x0F);
+
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::Z));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
+
+    mmu.write(0x0000, 0x01);
+    mmu.write(cpu.get_registers().pc, 0x035);       // DEC [HL]
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 3);
+    EXPECT_EQ(mmu.read(0x0000), 0x00);
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::Z));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
+}
