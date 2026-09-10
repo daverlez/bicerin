@@ -29,6 +29,7 @@ public:
         void set_bc(uint16_t val) { b = (val & 0xFF00) >> 8; c = (val & 0x00FF); }
         void set_de(uint16_t val) { d = (val & 0xFF00) >> 8; e = (val & 0x00FF); }
         void set_hl(uint16_t val) { h = (val & 0xFF00) >> 8; l = (val & 0x00FF); }
+        void set_sp(uint16_t val) { sp = val; }
 
         enum Flag : uint8_t {
             Z = 1 << 7,
@@ -64,6 +65,8 @@ private:
     using InstructionHandler = uint8_t (Cpu::*)();
     std::array<InstructionHandler, 256> instructions_;
 
+    using Reg16Setter = void (Cpu::Registers::*)(uint16_t);
+
     uint8_t unimplemented_instruction();
     void build_instruction_table();
 
@@ -73,6 +76,8 @@ private:
      * Block 0 (see Pan Docs) *
      **************************/
 
+    template <void (Cpu::Registers::*Setter)(uint16_t)>
+                                            uint8_t ld_r16_imm16();
     template <uint8_t Cpu::Registers::*Reg> uint8_t inc_r8();
                                             uint8_t inc_hl();
     template <uint8_t Cpu::Registers::*Reg> uint8_t dec_r8();

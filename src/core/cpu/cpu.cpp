@@ -38,6 +38,16 @@ uint8_t Cpu::nop() {
     return 1;
 }
 
+template <void (Cpu::Registers::*Setter)(uint16_t)>
+uint8_t Cpu::ld_r16_imm16() {
+    uint8_t lsb = mmu_.read(registers_.pc); registers_.pc++;
+    uint8_t msb = mmu_.read(registers_.pc); registers_.pc++;
+    uint16_t imm16 = (msb << 8) | lsb;
+
+    (registers_.*Setter)(imm16);
+    return 3;
+}
+
 template <uint8_t Cpu::Registers::*Reg>
 uint8_t Cpu::inc_r8() {
     bool half_carry = (registers_.*Reg & 0x0F) == 0x0F;
@@ -139,6 +149,11 @@ void Cpu::build_instruction_table() {
      ***********/
 
     instructions_[0x00] = &Cpu::nop;
+
+    instructions_[0x01] = &Cpu::ld_r16_imm16<&Cpu::Registers::set_bc>;
+    instructions_[0x11] = &Cpu::ld_r16_imm16<&Cpu::Registers::set_de>;
+    instructions_[0x21] = &Cpu::ld_r16_imm16<&Cpu::Registers::set_hl>;
+    instructions_[0x31] = &Cpu::ld_r16_imm16<&Cpu::Registers::set_sp>;
 
     instructions_[0x04] = &Cpu::inc_r8<&Cpu::Registers::b>;
     instructions_[0x0C] = &Cpu::inc_r8<&Cpu::Registers::c>;
