@@ -109,10 +109,18 @@ private:
     /**************************
      * Block 1 (see Pan Docs) *
      **************************/
+
     template <uint8_t Cpu::Registers::*Dst,
               uint8_t Cpu::Registers::*Src> uint8_t ld_r8_r8();
     template <uint8_t Cpu::Registers::*Dst> uint8_t ld_r8_hl();
     template <uint8_t Cpu::Registers::*Src> uint8_t ld_hl_r8();
+
+    /**************************
+     * Block 2 (see Pan Docs) *
+     **************************/
+
+    template <uint8_t Cpu::Registers::*Reg> uint8_t add_a_r8();
+                                            uint8_t add_a_hl();
 };
 
 

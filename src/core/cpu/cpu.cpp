@@ -241,6 +241,35 @@ uint8_t Cpu::ld_hl_r8() {
     return 2;
 }
 
+template <uint8_t Cpu::Registers::*Reg>
+uint8_t Cpu::add_a_r8() {
+    uint8_t val = registers_.*Reg;
+    uint8_t a = registers_.a;
+    uint16_t res = static_cast<uint16_t>(a) + val;
+
+    registers_.set_flag(Registers::Flag::Z, (res & 0x00FF) == 0);
+    registers_.set_flag(Registers::Flag::N, false);
+    registers_.set_flag(Registers::Flag::H, (((a & 0x0F) + (val & 0x0F)) & 0x10) != 0);
+    registers_.set_flag(Registers::Flag::C, res > 0xFF);
+
+    registers_.a = static_cast<uint8_t>(res);
+    return 1;
+}
+
+uint8_t Cpu::add_a_hl() {
+    uint8_t val = mmu_.read(registers_.get_hl());
+    uint8_t a = registers_.a;
+    uint16_t res = static_cast<uint16_t>(a) + val;
+
+    registers_.set_flag(Registers::Flag::Z, (res & 0x00FF) == 0);
+    registers_.set_flag(Registers::Flag::N, false);
+    registers_.set_flag(Registers::Flag::H, (((a & 0x0F) + (val & 0x0F)) & 0x10) != 0);
+    registers_.set_flag(Registers::Flag::C, res > 0xFF);
+
+    registers_.a = static_cast<uint8_t>(res);
+    return 2;
+}
+
 void Cpu::build_instruction_table() {
     instructions_.fill(&Cpu::unimplemented_instruction);
 
@@ -391,4 +420,17 @@ void Cpu::build_instruction_table() {
     instructions_[0x7D] = &Cpu::ld_r8_r8<&Cpu::Registers::a, &Cpu::Registers::l>;
     instructions_[0x7E] = &Cpu::ld_r8_hl<&Cpu::Registers::a>;
     instructions_[0x7F] = &Cpu::ld_r8_r8<&Cpu::Registers::a, &Cpu::Registers::a>;
+
+    /***********
+     * Block 0 *
+     ***********/
+
+    instructions_[0x80] = &Cpu::add_a_r8<&Cpu::Registers::b>;
+    instructions_[0x81] = &Cpu::add_a_r8<&Cpu::Registers::c>;
+    instructions_[0x82] = &Cpu::add_a_r8<&Cpu::Registers::d>;
+    instructions_[0x83] = &Cpu::add_a_r8<&Cpu::Registers::e>;
+    instructions_[0x84] = &Cpu::add_a_r8<&Cpu::Registers::h>;
+    instructions_[0x85] = &Cpu::add_a_r8<&Cpu::Registers::l>;
+    instructions_[0x86] = &Cpu::add_a_hl;
+    instructions_[0x87] = &Cpu::add_a_r8<&Cpu::Registers::a>;
 }
