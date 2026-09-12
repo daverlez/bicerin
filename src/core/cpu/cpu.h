@@ -133,6 +133,8 @@ private:
                                             uint8_t xor_a_hl();
     template <uint8_t Cpu::Registers::*Reg> uint8_t or_a_r8();
                                             uint8_t or_a_hl();
+    template <uint8_t Cpu::Registers::*Reg> uint8_t cp_a_r8();
+                                            uint8_t cp_a_hl();
 };
 
 
