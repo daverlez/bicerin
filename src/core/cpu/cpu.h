@@ -129,6 +129,8 @@ private:
                                             uint8_t sbc_a_hl();
     template <uint8_t Cpu::Registers::*Reg> uint8_t and_a_r8();
                                             uint8_t and_a_hl();
+    template <uint8_t Cpu::Registers::*Reg> uint8_t xor_a_r8();
+                                            uint8_t xor_a_hl();
 };
 
 

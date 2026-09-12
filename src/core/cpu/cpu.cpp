@@ -386,6 +386,31 @@ uint8_t Cpu::and_a_hl() {
     return 2;
 }
 
+template <uint8_t Cpu::Registers::*Reg>
+uint8_t Cpu::xor_a_r8() {
+    uint8_t val = registers_.*Reg;
+    registers_.a ^= val;
+
+    registers_.set_flag(Registers::Flag::Z, registers_.a == 0);
+    registers_.set_flag(Registers::Flag::N, false);
+    registers_.set_flag(Registers::Flag::H, false);
+    registers_.set_flag(Registers::Flag::C, false);
+
+    return 1;
+}
+
+uint8_t Cpu::xor_a_hl() {
+    uint8_t val = mmu_.read(registers_.get_hl());
+    registers_.a ^= val;
+
+    registers_.set_flag(Registers::Flag::Z, registers_.a == 0);
+    registers_.set_flag(Registers::Flag::N, false);
+    registers_.set_flag(Registers::Flag::H, false);
+    registers_.set_flag(Registers::Flag::C, false);
+
+    return 2;
+}
+
 void Cpu::build_instruction_table() {
     instructions_.fill(&Cpu::unimplemented_instruction);
 
@@ -585,4 +610,13 @@ void Cpu::build_instruction_table() {
     instructions_[0xA5] = &Cpu::and_a_r8<&Cpu::Registers::l>;
     instructions_[0xA6] = &Cpu::and_a_hl;
     instructions_[0xA7] = &Cpu::and_a_r8<&Cpu::Registers::a>;
+
+    instructions_[0xA8] = &Cpu::xor_a_r8<&Cpu::Registers::b>;
+    instructions_[0xA9] = &Cpu::xor_a_r8<&Cpu::Registers::c>;
+    instructions_[0xAA] = &Cpu::xor_a_r8<&Cpu::Registers::d>;
+    instructions_[0xAB] = &Cpu::xor_a_r8<&Cpu::Registers::e>;
+    instructions_[0xAC] = &Cpu::xor_a_r8<&Cpu::Registers::h>;
+    instructions_[0xAD] = &Cpu::xor_a_r8<&Cpu::Registers::l>;
+    instructions_[0xAE] = &Cpu::xor_a_hl;
+    instructions_[0xAF] = &Cpu::xor_a_r8<&Cpu::Registers::a>;
 }
