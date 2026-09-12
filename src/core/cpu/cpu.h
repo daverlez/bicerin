@@ -123,6 +123,10 @@ private:
                                             uint8_t add_a_hl();
     template <uint8_t Cpu::Registers::*Reg> uint8_t adc_a_r8();
                                             uint8_t adc_a_hl();
+    template <uint8_t Cpu::Registers::*Reg> uint8_t sub_a_r8();
+                                            uint8_t sub_a_hl();
+    template <uint8_t Cpu::Registers::*Reg> uint8_t sbc_a_r8();
+                                            uint8_t sbc_a_hl();
 };
 
 

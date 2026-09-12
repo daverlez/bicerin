@@ -301,6 +301,66 @@ uint8_t Cpu::adc_a_hl() {
     return 2;
 }
 
+template <uint8_t Cpu::Registers::*Reg>
+uint8_t Cpu::sub_a_r8() {
+    uint8_t val = registers_.*Reg;
+    uint8_t a = registers_.a;
+    uint16_t res = static_cast<uint16_t>(a) - val;
+
+    registers_.set_flag(Registers::Flag::Z, (res & 0x00FF) == 0);
+    registers_.set_flag(Registers::Flag::N, true);
+    registers_.set_flag(Registers::Flag::H, (a & 0x0F) < (val & 0x0F));
+    registers_.set_flag(Registers::Flag::C, a < val);
+
+    registers_.a = static_cast<uint8_t>(res);
+    return 1;
+}
+
+uint8_t Cpu::sub_a_hl() {
+    uint8_t val = mmu_.read(registers_.get_hl());
+    uint8_t a = registers_.a;
+    uint16_t res = static_cast<uint16_t>(a) - val;
+
+    registers_.set_flag(Registers::Flag::Z, (res & 0x00FF) == 0);
+    registers_.set_flag(Registers::Flag::N, true);
+    registers_.set_flag(Registers::Flag::H, (a & 0x0F) < (val & 0x0F));
+    registers_.set_flag(Registers::Flag::C, a < val);
+
+    registers_.a = static_cast<uint8_t>(res);
+    return 2;
+}
+
+template <uint8_t Cpu::Registers::*Reg>
+uint8_t Cpu::sbc_a_r8() {
+    uint8_t val = registers_.*Reg;
+    uint8_t carry = registers_.get_flag(Registers::Flag::C) ? 1 : 0;
+    uint8_t a = registers_.a;
+    uint16_t res = static_cast<uint16_t>(a) - val - carry;
+
+    registers_.set_flag(Registers::Flag::Z, (res & 0x00FF) == 0);
+    registers_.set_flag(Registers::Flag::N, true);
+    registers_.set_flag(Registers::Flag::H, (a & 0x0F) < (val & 0x0F) + carry);
+    registers_.set_flag(Registers::Flag::C, a < val + carry);
+
+    registers_.a = static_cast<uint8_t>(res);
+    return 1;
+}
+
+uint8_t Cpu::sbc_a_hl() {
+    uint8_t val = mmu_.read(registers_.get_hl());
+    uint8_t carry = registers_.get_flag(Registers::Flag::C) ? 1 : 0;
+    uint8_t a = registers_.a;
+    uint16_t res = static_cast<uint16_t>(a) - val - carry;
+
+    registers_.set_flag(Registers::Flag::Z, (res & 0x00FF) == 0);
+    registers_.set_flag(Registers::Flag::N, true);
+    registers_.set_flag(Registers::Flag::H, (a & 0x0F) < (val & 0x0F) + carry);
+    registers_.set_flag(Registers::Flag::C, a < val + carry);
+
+    registers_.a = static_cast<uint8_t>(res);
+    return 2;
+}
+
 void Cpu::build_instruction_table() {
     instructions_.fill(&Cpu::unimplemented_instruction);
 
@@ -473,4 +533,22 @@ void Cpu::build_instruction_table() {
     instructions_[0x8D] = &Cpu::adc_a_r8<&Cpu::Registers::l>;
     instructions_[0x8E] = &Cpu::adc_a_hl;
     instructions_[0x8F] = &Cpu::adc_a_r8<&Cpu::Registers::a>;
+
+    instructions_[0x90] = &Cpu::sub_a_r8<&Cpu::Registers::b>;
+    instructions_[0x91] = &Cpu::sub_a_r8<&Cpu::Registers::c>;
+    instructions_[0x92] = &Cpu::sub_a_r8<&Cpu::Registers::d>;
+    instructions_[0x93] = &Cpu::sub_a_r8<&Cpu::Registers::e>;
+    instructions_[0x94] = &Cpu::sub_a_r8<&Cpu::Registers::h>;
+    instructions_[0x95] = &Cpu::sub_a_r8<&Cpu::Registers::l>;
+    instructions_[0x96] = &Cpu::sub_a_hl;
+    instructions_[0x97] = &Cpu::sub_a_r8<&Cpu::Registers::a>;
+
+    instructions_[0x98] = &Cpu::sbc_a_r8<&Cpu::Registers::b>;
+    instructions_[0x99] = &Cpu::sbc_a_r8<&Cpu::Registers::c>;
+    instructions_[0x9A] = &Cpu::sbc_a_r8<&Cpu::Registers::d>;
+    instructions_[0x9B] = &Cpu::sbc_a_r8<&Cpu::Registers::e>;
+    instructions_[0x9C] = &Cpu::sbc_a_r8<&Cpu::Registers::h>;
+    instructions_[0x9D] = &Cpu::sbc_a_r8<&Cpu::Registers::l>;
+    instructions_[0x9E] = &Cpu::sbc_a_hl;
+    instructions_[0x9F] = &Cpu::sbc_a_r8<&Cpu::Registers::a>;
 }
