@@ -121,6 +121,8 @@ private:
 
     template <uint8_t Cpu::Registers::*Reg> uint8_t add_a_r8();
                                             uint8_t add_a_hl();
+    template <uint8_t Cpu::Registers::*Reg> uint8_t adc_a_r8();
+                                            uint8_t adc_a_hl();
 };
 
 
