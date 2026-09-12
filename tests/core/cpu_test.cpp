@@ -605,3 +605,127 @@ TEST_F(CpuTest, Adc_a_r8_hl) {
     EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
     EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::C));
 }
+
+TEST_F(CpuTest, Sub_a_r8_hl) {
+    uint16_t start_pc = cpu.get_registers().pc;
+    mmu.write(0x8000, 0x05);
+
+    std::vector<uint8_t> program = {
+        // Test 1: SUB A, B (Half carry)
+        0x3E, 0x10,       // LD A, 0x10
+        0x06, 0x01,       // LD B, 0x01
+        0x90,             // SUB A, B
+
+        // Test 2: SUB A, C (Carry, Half carry)
+        0x3E, 0x10,       // LD A, 0x10
+        0x0E, 0x20,       // LD C, 0x20
+        0x91,             // SUB A, C
+
+        // Test 3: SUB A, [HL] (Zero flag)
+        0x3E, 0x05,       // LD A, 0x05
+        0x21, 0x00, 0x80, // LD HL, 0x8000
+        0x96              // SUB A, [HL]
+    };
+    for (size_t i = 0; i < program.size(); ++i) mmu.write(start_pc + i, program[i]);
+
+    // Test 1
+    cpu.tick();
+    cpu.tick();
+    uint8_t cycles = cpu.tick();
+    EXPECT_EQ(cycles, 1);
+    EXPECT_EQ(cpu.get_registers().a, 0x0F);
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::Z));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::C));
+
+    // Test 2
+    cpu.tick();
+    cpu.tick();
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 1);
+    EXPECT_EQ(cpu.get_registers().a, 0xF0);
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::Z));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::C));
+
+    // Test 3
+    cpu.tick();
+    cpu.tick();
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(cpu.get_registers().a, 0x00);
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::Z));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::C));
+}
+
+TEST_F(CpuTest, Sbc_a_r8_hl) {
+    uint16_t start_pc = cpu.get_registers().pc;
+    mmu.write(0x8000, 0x05);
+
+    std::vector<uint8_t> program = {
+        // Test 1: SBC A, B (Carry = 0)
+        0x3E, 0x10,       // LD A, 0x10
+        0x06, 0x01,       // LD B, 0x01
+        0x98,             // SBC A, B
+
+        // Test 2: SBC A, C (Carry = 1)
+        0x3E, 0x00,       // LD A, 0x00
+        0x0E, 0x01,       // LD C, 0x01
+        0x91,             // SUB A, C
+        0x3E, 0x10,       // LD A, 0x10
+        0x0E, 0x02,       // LD C, 0x02
+        0x99,             // SBC A, C
+
+        // Test 3: SBC A, [HL] (Carry = 1, Overflow wrap)
+        0x3E, 0x00,       // LD A, 0x00
+        0x16, 0x01,       // LD D, 0x01
+        0x92,             // SUB A, D
+        0x3E, 0x05,       // LD A, 0x05
+        0x21, 0x00, 0x80, // LD HL, 0x8000
+        0x9E              // SBC A, [HL]
+    };
+    for (size_t i = 0; i < program.size(); ++i) mmu.write(start_pc + i, program[i]);
+
+    // Test 1
+    cpu.tick();
+    cpu.tick();
+    uint8_t cycles = cpu.tick();
+    EXPECT_EQ(cycles, 1);
+    EXPECT_EQ(cpu.get_registers().a, 0x0F);
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::Z));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::C));
+
+    // Test 2
+    cpu.tick();
+    cpu.tick();
+    cpu.tick();
+    cpu.tick();
+    cpu.tick();
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 1);
+    EXPECT_EQ(cpu.get_registers().a, 0x0D);
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::Z));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::C));
+
+    // Test 3
+    cpu.tick();
+    cpu.tick();
+    cpu.tick();
+    cpu.tick();
+    cpu.tick();
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(cpu.get_registers().a, 0xFF);
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::Z));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::C));
+}
