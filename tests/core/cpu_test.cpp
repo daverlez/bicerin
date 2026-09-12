@@ -785,3 +785,57 @@ TEST_F(CpuTest, And_a_r8_hl) {
     EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
     EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::C));
 }
+
+TEST_F(CpuTest, Xor_a_r8_hl) {
+    uint16_t start_pc = cpu.get_registers().pc;
+    mmu.write(0x8000, 0x55);
+
+    std::vector<uint8_t> program = {
+        // Test 1: XOR A, B (Non-zero result)
+        0x3E, 0xFF,       // LD A, 0xFF
+        0x06, 0x0F,       // LD B, 0x0F
+        0xA8,             // XOR A, B
+
+        // Test 2: XOR A, A (Zero result)
+        0x3E, 0x42,       // LD A, 0x42
+        0xAF,             // XOR A, A
+
+        // Test 3: XOR A, [HL] (All bits set)
+        0x3E, 0xAA,       // LD A, 0xAA
+        0x21, 0x00, 0x80, // LD HL, 0x8000
+        0xAE              // XOR A, [HL]
+    };
+    for (size_t i = 0; i < program.size(); ++i) mmu.write(start_pc + i, program[i]);
+
+    // Test 1
+    cpu.tick();
+    cpu.tick();
+    uint8_t cycles = cpu.tick();
+    EXPECT_EQ(cycles, 1);
+    EXPECT_EQ(cpu.get_registers().a, 0xF0);
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::Z));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::C));
+
+    // Test 2
+    cpu.tick();
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 1);
+    EXPECT_EQ(cpu.get_registers().a, 0x00);
+    EXPECT_TRUE(cpu.get_registers().get_flag(Cpu::Registers::Flag::Z));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::C));
+
+    // Test 3
+    cpu.tick();
+    cpu.tick();
+    cycles = cpu.tick();
+    EXPECT_EQ(cycles, 2);
+    EXPECT_EQ(cpu.get_registers().a, 0xFF);
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::Z));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::N));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::H));
+    EXPECT_FALSE(cpu.get_registers().get_flag(Cpu::Registers::Flag::C));
+}
